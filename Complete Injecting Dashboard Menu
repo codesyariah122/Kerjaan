@@ -1,0 +1,108 @@
+function custom_admin_dashboard_text() {
+    global $wp_version;
+    
+    // Ganti teks "Welcome to WordPress!" menjadi sesuai keinginan Anda
+    $welcome_text = 'Grosir Elektronik123';
+    
+    // Ganti teks "Learn more about the 6.5.5 version." sesuai keinginan Anda
+    $version_text = 'Develope By codesyariah';
+    
+    // Mengganti teks menggunakan filter
+    add_filter('gettext', function($translated_text, $text, $domain) use ($welcome_text, $version_text, $wp_version) {
+        if ($text === 'Welcome to WordPress!') {
+            $translated_text = $welcome_text;
+        }
+        if ($text === 'Learn more about the %s version.') {
+            $translated_text = sprintf($version_text, $wp_version);
+        }
+        return $translated_text;
+    }, 10, 3);
+}
+add_action('admin_init', 'custom_admin_dashboard_text');
+
+function move_menus_to_top() {
+    global $menu;
+
+    // Untuk debug
+    foreach ($menu as $item) {
+        error_log('Menu: ' . $item[2]);
+    }
+
+    $targets = ['snippets', 'theme_options', 'mas_static_content', 'toplevel_page_woocommerce'];
+    $top_menus = [];
+
+    foreach ($menu as $key => $menu_item) {
+        if (in_array($menu_item[2], $targets)) {
+            $top_menus[] = $menu_item;
+            unset($menu[$key]);
+        }
+    }
+
+    $menu = array_merge($top_menus, $menu);
+}
+add_action('admin_menu', 'move_menus_to_top', 9999);
+
+
+
+function replace_admin_menu_icons() {
+    ?>
+    <style>
+        /* Gambar ikon */
+        #toplevel_page_snippets .wp-menu-image,
+        #toplevel_page_theme_options .wp-menu-image,
+		#menu-posts-mas_static_content .wp-menu-image,
+		#adminmenu .toplevel_page_woocommerce .wp-menu-image {
+            background-image: url("https://grosirelektronik123.co.id/wp-content/uploads/2025/05/cropped-ge-logo.webp") !important;
+            background-size: 20px 20px !important;
+            background-repeat: no-repeat;
+            background-position: center center;
+            width: 30px !important;
+            height: 30px !important;
+        }
+
+        /* Sembunyikan icon default dari ::before */
+        #toplevel_page_snippets .wp-menu-image::before,
+        #toplevel_page_theme_options .wp-menu-image::before,
+		#menu-posts-mas_static_content .wp-menu-image::before{
+            content: '' !important;
+        }
+
+        /* Sembunyikan <img> jika ada */
+        #toplevel_page_snippets .wp-menu-image img,
+        #toplevel_page_theme_options .wp-menu-image img, 
+		#menu-posts-mas_static_content .wp-menu-image img,
+		#adminmenu .toplevel_page_woocommerce .wp-menu-image img{
+            display: none !important;
+        }
+    </style>
+    <?php
+}
+add_action('admin_head', 'replace_admin_menu_icons');
+
+add_action('admin_menu', 'pindahkan_menu_woocommerce_ke_atas', 999);
+function pindahkan_menu_woocommerce_ke_atas() {
+    global $menu;
+
+    foreach ($menu as $key => $item) {
+        if (isset($item[2]) && $item[2] === 'woocommerce') {
+            // Ambil data asli
+            $wc_menu = $item;
+            // Ganti label dan ikon
+            $wc_menu[0] = 'Toko';
+
+            // Hapus menu WooCommerce dari posisi lama
+            unset($menu[$key]);
+
+            // Tambahkan di awal (paling atas, setelah Dashboard)
+            array_splice($menu, 1, 0, [$wc_menu]);
+
+            break;
+        }
+    }
+}
+
+add_action('admin_bar_menu', 'hapus_icon_wordpress', 999);
+function hapus_icon_wordpress($wp_admin_bar) {
+    $wp_admin_bar->remove_node('wp-logo');
+}
+

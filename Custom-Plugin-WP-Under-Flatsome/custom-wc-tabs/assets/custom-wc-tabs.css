@@ -1,0 +1,98 @@
+.custom-wc-tabs {
+    position: relative;
+}
+
+.custom-wc-tabs ul.tabs {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-bottom: 2px solid #eee;
+    padding: 0;
+    margin: 0 0 20px 0;
+    scrollbar-width: none;
+}
+.custom-wc-tabs ul.tabs::-webkit-scrollbar {
+    display: none;
+}
+.custom-wc-tabs ul.tabs li {
+    list-style: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    color: #333;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    font-weight: 500;
+}
+.custom-wc-tabs ul.tabs li.active {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+    font-weight: 600;
+}
+.custom-wc-tabs .product-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+}
+.custom-wc-tabs .product-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease;
+}
+.custom-wc-tabs .product-card:hover {
+    transform: translateY(-4px);
+}
+.custom-wc-tabs .product-card img {
+    width: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.custom-wc-tabs .product-card h3 {
+    font-size: 1rem;
+    margin: 0 0 8px;
+}
+.custom-wc-tabs .product-card .price {
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+.custom-wc-tabs .product-card .button {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 12px;
+    text-align: center;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.product-loader {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: 12px;
+}
+
+.spinner {
+    border: 4px solid #eee;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

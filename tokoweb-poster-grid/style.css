@@ -1,0 +1,32 @@
+.tokoweb-poster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+    margin: 40px 0;
+}
+
+.tokoweb-poster-grid .poster-item {
+    text-align: center;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); */
+    transition: transform 0.3s ease;
+}
+
+.tokoweb-poster-grid .poster-item:hover {
+    transform: translateY(-6px);
+}
+
+.tokoweb-poster-grid img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.tokoweb-poster-grid .poster-title {
+    font-size: 1rem;
+    margin-top: 12px;
+    font-weight: 600;
+    color: #333;
+}

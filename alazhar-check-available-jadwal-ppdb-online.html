@@ -1,0 +1,126 @@
+<div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="spinner"></div>
+</div>
+
+<script>
+console.log("START")
+async function fetchGelombang(jenjang) {
+    const url = `https://alazhar-sbp.sch.id/ppdb/api/gelombang?jenjang=${jenjang}`;
+    // const url = `http://localhost/alazhar/index.php/api/gelombang?jenjang=${jenjang}`;
+
+    const overlay = document.getElementById('loading-overlay');
+    try {
+        const response = await fetch(url);
+        overlay.style.display = 'flex';
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+            overlay.style.display = 'none';
+        }
+
+        const data = await response.json();
+        console.log("API Response:", data); // Tambahkan log untuk melihat apa yang diterima dari API
+        const currentYear = new Date().getFullYear();
+        
+        // Periksa jika data dan data.data ada
+        if (data && data.data) {
+            const filteredData = data.data.filter(item => parseInt(item.sisa_quota) > 0);
+            return filteredData;
+        } else {
+            console.error('Data tidak ditemukan atau struktur data tidak valid');
+            return []; // Kembalikan array kosong jika data tidak valid
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+        overlay.style.display = 'none';
+    } finally {
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 500)
+        console.log("Ok")
+    }
+}
+
+
+    const saveStorage = (level,val, grade, gelombang) => {
+        
+        const keyData = {
+            key: val
+        }
+        
+        const levelData = {
+            key: level
+        }
+        
+        const gradeData = {
+            key: grade
+        }
+        
+        const gelombangData = {
+            key: gelombang
+        }
+
+        localStorage.setItem('unit-grade', JSON.stringify(keyData))
+        localStorage.setItem('level-change', JSON.stringify(levelData))
+        localStorage.setItem('selected-grade', JSON.stringify(gradeData))
+        localStorage.setItem('gelombang-id', JSON.stringify(gelombangData))
+    }
+        
+    document.querySelectorAll('.btn__storage').forEach(async(btn) => {
+    const grade = btn.dataset.grade;
+
+    const dataGelombang = await fetchGelombang(grade);
+    console.log("Data Gelombang:", dataGelombang); // Log untuk memverifikasi data yang diterima
+
+    // Periksa jika dataGelombang ada sebelum menggunakan find
+    if (dataGelombang && Array.isArray(dataGelombang)) {
+        const gelombang = dataGelombang.find(gelombang => gelombang.jenjang === grade);
+
+        if (gelombang) {
+            btn.setAttribute('data-gelombang', gelombang.id);
+        } else {
+            btn.disabled = true;
+            const alertInfo = document.createElement('div');
+            alertInfo.classList.add('alert-info');
+            alertInfo.style.color = 'red';
+            alertInfo.style.marginTop = '10px';
+            alertInfo.innerText = 'Gelombang tidak tersedia';
+            btn.parentNode.insertBefore(alertInfo, btn.nextSibling);
+        }
+    } else {
+        console.error('dataGelombang tidak valid atau bukan array');
+    }
+ 
+    // Fetch limit per unit
+    fetchGelombang(btn.dataset.grade);
+    
+    btn.addEventListener('click', (e) => {
+        if(!btn.disabled && e.type === "click") {
+            if(btn.dataset.id) {
+                saveStorage(btn.dataset.level, btn.dataset.id, btn.dataset.grade, btn.dataset.gelombang)
+            }
+            
+            location.href="/alur-pendaftaran"
+        }
+    })
+})
+</script>
+
+<style>
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 6px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+</style>

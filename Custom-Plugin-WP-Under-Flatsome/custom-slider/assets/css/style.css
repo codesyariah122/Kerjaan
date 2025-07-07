@@ -1,0 +1,50 @@
+.cs-swiper-container {
+    width: 100%;
+    padding: 40px 0;
+}
+
+.swiper-slide {
+    transition: all 0.3s ease;
+    opacity: 0.5;
+    transform: scale(0.9);
+}
+
+.swiper-slide-active {
+    opacity: 1;
+    transform: scale(1.1) translateY(-15px);
+    /* Naik ke atas 15px */
+    z-index: 9999;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.slide-wrapper {
+    width: 100%;
+    padding-top: 150%;
+    background-size: cover;
+    background-position: center;
+    border-radius: 10px;
+}
+
+.swiper-slide .slide-wrapper {
+    transition: all 0.3s ease;
+}
+
+.swiper-slide-active {
+    opacity: 1;
+    transform: scale(1.1);
+    z-index: 10;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.swiper-slide-active .slide-wrapper {
+    padding-top: 170%;
+    /* lebih tinggi */
+}
+
+.swiper-slide-prev,
+.swiper-slide-next {
+    opacity: 0.7;
+    transform: scale(0.95);
+}

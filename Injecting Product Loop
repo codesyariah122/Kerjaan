@@ -1,0 +1,77 @@
+function add_wa_button_script() {
+    // Ambil nomor WhatsApp dari custom post type "whatsapp_admin"
+    $args = array(
+        'post_type' => 'whatsapp_admin', // Ganti dengan nama post type yang sesuai
+        'posts_per_page' => 1,           // Ambil 1 post
+        'post_status' => 'publish',      // Hanya post yang sudah dipublikasikan
+    );
+    
+    $whatsapp_posts = get_posts($args);
+    $whatsapp_number = ''; // Default jika tidak ada nomor
+
+    if (!empty($whatsapp_posts)) {
+        // Debugging: Cek ID post yang diambil
+        error_log('Post ID: ' . $whatsapp_posts[0]->ID);
+
+		$raw_number = get_field('nomor_wa_admin', $whatsapp_posts[0]->ID);
+
+		if ($raw_number) {
+			// Sanitize nomor WA
+			$sanitized_number = preg_replace('/\D+/', '', $raw_number);
+			if (substr($sanitized_number, 0, 1) === '0') {
+				$sanitized_number = '62' . substr($sanitized_number, 1);
+			}
+
+			$whatsapp_number = $sanitized_number;
+			error_log('Nomor WhatsApp ditemukan dan disanitasi: ' . $whatsapp_number);
+		} else {
+			error_log('Nomor WhatsApp tidak ditemukan dalam post meta');
+		}
+    } else {
+        error_log('Tidak ada post untuk custom post type whatsapp_admin');
+    }
+
+    // Default jika nomor WA tidak ditemukan
+    if (empty($whatsapp_number)) {
+        $whatsapp_number = '6281234567890'; // Nomor fallback
+    }
+    
+    // Masukkan nomor WhatsApp ke dalam JavaScript
+    ?>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const whatsappNumber = "<?php echo esc_js($whatsapp_number); ?>"; // Nomor WA dari PHP
+
+        // Debugging: Cek apakah nomor WhatsApp sudah diteruskan dengan benar ke JavaScript
+        console.log('Nomor WhatsApp di JavaScript: ' + whatsappNumber);
+
+        document.querySelectorAll(".woocommerce ul.products li.product").forEach(function (productCard) {
+            // Cek apakah tombol sudah ditambahkan
+            if (productCard.querySelector(".wa-button")) return;
+
+            const titleElement = productCard.querySelector(".woocommerce-loop-product__title");
+            if (!titleElement) return;
+
+            const productName = titleElement.textContent.trim();
+			const message = `Halo, saya tertarik dengan produk: ${productName}`;
+			const waLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+
+            const waBtn = document.createElement("a");
+            waBtn.href = waLink;
+            waBtn.target = "_blank";
+            waBtn.className = "button wa-button";
+            waBtn.innerHTML = '<i class="fab fa-whatsapp" style="margin-right:8px;"></i>Beli via WhatsApp'; // Menambahkan ikon WhatsApp Font Awesome
+            waBtn.style.cssText = "display:flex;align-items:center;justify-content:center;margin-top:8px;margin-bottom:10px;background:#25D366;color:#fff;padding:5px 10px;border-radius:5px;font-size:14px;text-align:center;width:100%;max-width:200px;margin-left:auto;margin-right:auto;";
+
+            // Cari elemen .price-add-to-cart dan sisipkan tombol setelahnya
+            const addToCartWrap = productCard.querySelector(".price-add-to-cart");
+            if (addToCartWrap) {
+                addToCartWrap.insertAdjacentElement("afterend", waBtn);
+            }
+        });
+    });
+    </script>
+    <?php
+}
+add_action('wp_footer', 'add_wa_button_script');

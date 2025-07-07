@@ -1,0 +1,123 @@
+name: Indolaw CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Copy .env file
+        run: cp .env.example .env
+
+      - name: Add database configuration to .env
+        run: |
+          echo "DB_CONNECTION=pgsql" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "REMOTE_ADDR=${{ secrets.SERVER_IP }}" >> .env
+          echo "HTTP_HOST=${{ secrets.HTTP_HOST }}" >> .env
+          echo "APP_NAME='indolaw-app'" >> .env
+          echo "APP_ENV=testing" >> .env  # Pastikan pengaturan lingkungan untuk pengujian
+          echo "APP_DEBUG=true" >> .env
+          echo "APP_URL=${{ secrets.APP_URL }}" >> .env
+          echo "UPLOAD_MAX_FILESIZE=52428800" >> .env
+          echo "REQUEST_URI=/" >> .env
+          echo "HTTP_USER_AGENT='Testing/1.0'" >> .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      # - name: Run migrations
+      #   run: php artisan migrate --env=testing --force
+
+      # - name: Seed database
+      #   run: php artisan db:seed --env=testing
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          REMOTE_ADDR: ${{ secrets.SERVER_IP }}
+        run: vendor/bin/phpunit
+
+      - name: Configure database
+        run: php artisan config:cache
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest --no-dev
+
+      - name: Install Vite
+        run: npm install
+
+      - name: Run npm build
+        run: npm run build
+
+      - name: Prepare remote directory and set permissions
+        run: |
+          echo ${{ secrets.SSH_PASSWORD }} | sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -tt -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} '
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S mkdir -p /var/www/html/Indolaw-ComPro &&
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S chown -R ${{ secrets.SERVER_USER }}:www-data /var/www/html/Indolaw-ComPro &&
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S chmod -R 775 /var/www/html/Indolaw-ComPro'
+
+      - name: Deploy to server
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -p ${{ secrets.SSH_PASSWORD }} rsync -avz --exclude '.env' --omit-dir-times ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/var/www/html/Indolaw-ComPro
+          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} '
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S chown -R www-data:www-data /var/www/html/Indolaw-ComPro &&
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S chmod -R 755 /var/www/html/Indolaw-ComPro'
+
+      - name: Restart server services
+        uses: appleboy/ssh-action@v0.1.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            cd /var/www/html/Indolaw-ComPro
+            sudo systemctl restart nginx
+            sudo systemctl restart php8.1-fpm
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:clear
+            php artisan cache:clear
