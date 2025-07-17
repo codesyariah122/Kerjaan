@@ -7,7 +7,8 @@ jQuery(window).on('elementor/frontend/init', function () {
             autoplaySpeed: 5000,
             infinite: true,
             speed: 800,
-            fade: false,
+            fade: true,
+            adaptiveHeight: false,
             cssEase: 'ease'
         });
     });
