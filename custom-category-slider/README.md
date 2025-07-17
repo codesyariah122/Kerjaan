@@ -1,4 +1,5 @@
 ## 📦 Custom Category Slider Pro
+<img width="1919" height="907" alt="Screenshot 2025-07-17 172111" src="https://github.com/user-attachments/assets/10c6ceb5-10d9-4d27-b1a4-be3e83258b7b" />
 
 Deskripsi:
 Plugin slider kategori yang bisa dikustomisasi dengan pengaturan admin, integrasi Elementor widget, dukungan AJAX, lazy loading gambar, dan latar belakang kategori.

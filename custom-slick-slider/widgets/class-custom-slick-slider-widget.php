@@ -361,6 +361,19 @@ class Custom_Slick_Slider_Widget extends \Elementor\Widget_Base
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <script>
+            jQuery(document).ready(function($) {
+                $('#home-slider-6').on('afterChange', function(event, slick, currentSlide) {
+                    const $dots = $('#home-slider-6 .slick-dots li');
+                    console.log("Current slide index:", currentSlide);
+                    $dots.removeClass('dot-left dot-right');
+
+                    const isEven = currentSlide % 2 === 0;
+                    $dots.eq(currentSlide).addClass(isEven ? 'dot-right' : 'dot-left');
+                });
+            });
+        </script>
 <?php
     }
 }

@@ -115,19 +115,46 @@
     gap: 13px;
 }
 
-#home-slider-6 .slick-dots li button {
-    width: 10px;
-    height: 10px;
-    background: #fe3406;
-    border-radius: 30px;
-    transition: all 0.3s ease;
+#home-slider-6 .slick-dots li {
+    position: relative;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin: 0 5px;
     padding: 0;
+    cursor: pointer;
+}
+
+#home-slider-6 .slick-dots li button {
+    background: #fe3406;
+    width: 12px;
+    height: 12px;
+    transition: all 0.3s ease;
+    border-radius: 30px;
 }
 
 #home-slider-6 .slick-dots li.slick-active button {
     background: #fe3406;
     width: 30px;
     transform: scale(1.3);
+}
+
+#home-slider-6 .slick-dots li.slick-active button {
+    background: #fe3406;
+    transition: all 0.3s ease;
+}
+
+/* Arah ke kanan */
+#home-slider-6 .slick-dots li.dot-right.slick-active button {
+    width: 30px;
+    /* transform-origin: left !important; */
+}
+
+/* Arah ke kiri */
+#home-slider-6 .slick-dots li.dot-left.slick-active button {
+    width: 40px;
+    transform-origin: right !important;
+    transform: translateX(-25px);
 }
 
 #home-slider-6 .slick-dots li button:before {
