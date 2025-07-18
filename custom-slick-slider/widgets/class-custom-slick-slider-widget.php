@@ -200,6 +200,12 @@ class Custom_Slick_Slider_Widget extends \Elementor\Widget_Base
             ],
         ]);
 
+        $repeater->add_control('button_bg_color', [
+            'label' => __('Button Background Color', 'custom-slick-slider'),
+            'type' => \Elementor\Controls_Manager::COLOR,
+            'default' => '#fe3406',
+        ]);
+
         $this->add_control('is_full_width', [
             'label' => __('Full Width Slider', 'custom-slick-slider'),
             'type' => \Elementor\Controls_Manager::SWITCHER,
@@ -259,6 +265,12 @@ class Custom_Slick_Slider_Widget extends \Elementor\Widget_Base
             ],
         ]);
 
+        $this->add_control('dots_bg_color', [
+            'label' => __('Dots Background Color', 'custom-slick-slider'),
+            'type' => \Elementor\Controls_Manager::COLOR,
+            'default' => '#fe3406',
+        ]);
+
         $this->add_control('dots_position', [
             'label' => __('Dots Position', 'custom-slick-slider'),
             'type' => \Elementor\Controls_Manager::SELECT,
@@ -296,6 +308,19 @@ class Custom_Slick_Slider_Widget extends \Elementor\Widget_Base
             }
         </style>';
         }
+
+        $settings = $this->get_settings_for_display();
+
+        $dots_bg_color = !empty($settings['dots_bg_color']) ? $settings['dots_bg_color'] : '#fe3406';
+
+        echo '<style>
+            #home-slider-6 .slick-dots li button {
+                background-color: ' . esc_attr($dots_bg_color) . ' !important;
+            }
+            #home-slider-6 .slick-dots li.slick-active button {
+                background-color: ' . esc_attr($dots_bg_color) . ' !important;
+            }
+        </style>';
 ?>
         <div class="animated-slider<?php echo ($settings['is_full_width'] === 'yes') ? ' slider-fullwidth' : ''; ?>" id="home-slider-6">
 
@@ -342,7 +367,7 @@ class Custom_Slick_Slider_Widget extends \Elementor\Widget_Base
                             <?php endif; ?>
 
                             <?php if (!empty($slide['button_link']['url'])): ?>
-                                <a href="<?php echo esc_url($slide['button_link']['url']); ?>" class="btn btn-lg btn-primary"
+                                <a href="<?php echo esc_url($slide['button_link']['url']); ?>" class="btn btn-lg btn-primary" style="background-color: '<?= $settings['button_bg_color'] ?>'"
                                     <?php echo $slide['button_link']['is_external'] ? 'target="_blank"' : ''; ?>>
                                     <?php echo esc_html($slide['button_text']); ?>
                                 </a>

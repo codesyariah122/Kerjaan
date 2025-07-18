@@ -40,7 +40,7 @@ function ccsp_enqueue_scripts()
         }
 
         .category-slider .category-item {
-            background: transparent !important; /* transparan total */
+            background: transparent !important;
             border: none;
             box-shadow: none;
             text-align: center;
@@ -99,7 +99,7 @@ function ccsp_enqueue_scripts()
         }
 
         .slider-arrow .btn-icon:hover {
-            background: #ED2D56; /* warna merah khas */
+            background: #ED2D56;
             border-color: #ad9ca0ff;
             color: #fff;
         }
@@ -133,7 +133,8 @@ function ccsp_enqueue_scripts()
         }
 
         .category-slider .category-item:hover .category-img img {
-            transform: scale(1.3); /* sebelumnya 1.1, ubah ke 1.3 atau sesuai selera */
+            transform: scale(1.3);
+            z-index: 99;
         }
 
 
@@ -150,15 +151,19 @@ function ccsp_enqueue_scripts()
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 80;
         }
         
         .category-slider .category-item .category-img img {
-            width: 100%;
+            width: 90%;
             height: 140px; 
             object-fit: cover;
             display: block;
         }
 
+        .category-slider .category-item .category-img img:hover{
+            z-index: 99!important;
+        }
     ');
 
     // Slick init, nanti bisa dipanggil ulang via ajax
@@ -375,6 +380,8 @@ function ccsp_render_category_slider($args = [])
         'taxonomy' => $taxonomy,
         'hide_empty' => true,
         'number' => $limit,
+        'orderby'    => 'id',
+        'order'      => 'DESC',
     ]);
     if (empty($terms) || is_wp_error($terms)) {
         return '<p>No categories found.</p>';

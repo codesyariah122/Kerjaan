@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) exit;
 add_action('wp_enqueue_scripts', 'csslick_enqueue_assets');
 function csslick_enqueue_assets()
 {
-    // 1. Enqueue slick.css dulu
+    // 1. Enqueue slick.css
     wp_enqueue_style('slick-css', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css');
 
     // 2. Enqueue custom style dulu SEBELUM slick-theme (biar bisa ditimpa oleh slick-theme kalau perlu)

@@ -126,35 +126,39 @@
 }
 
 #home-slider-6 .slick-dots li button {
-    background: #fe3406;
-    width: 12px;
-    height: 12px;
+    /* background: #fe3406; */
+    width: 10px;
+    height: 10px;
     transition: all 0.3s ease;
     border-radius: 30px;
 }
 
 #home-slider-6 .slick-dots li.slick-active button {
-    background: #fe3406;
+    /* background: #fe3406; */
     width: 30px;
     transform: scale(1.3);
 }
 
 #home-slider-6 .slick-dots li.slick-active button {
-    background: #fe3406;
-    transition: all 0.3s ease;
+    /* background: #fe3406; */
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), width 0.15s ease;
 }
 
 /* Arah ke kanan */
 #home-slider-6 .slick-dots li.dot-right.slick-active button {
-    width: 30px;
+    /* width: 30px; */
     /* transform-origin: left !important; */
 }
 
 /* Arah ke kiri */
-#home-slider-6 .slick-dots li.dot-left.slick-active button {
-    width: 40px;
+#home-slider-6 .slick-dots li.dot-left button {
     transform-origin: right !important;
+}
+
+#home-slider-6 .slick-dots li.dot-left.slick-active button {
+    width: 30px;
     transform: translateX(-25px);
+    /* transition: none !important; */
 }
 
 #home-slider-6 .slick-dots li button:before {
@@ -223,4 +227,28 @@
         right: -10px;
         opacity: 0.2;
     }
+}
+
+@media (max-width: 768px) {
+    .slider-item .row {
+        flex-direction: column !important;
+        width: 100% !important;
+        margin-bottom: 2rem !important;
+    }
+
+    .slider-item .slider-image {
+        order: -1;
+        /* Pindah ke atas */
+        padding-right: 0;
+        padding-bottom: 20px;
+    }
+
+    .slider-item .slider-image img {
+        width: 100% !important;
+    }
+
+    .slider-item .slider-content {
+        order: 1;
+    }
+
 }
