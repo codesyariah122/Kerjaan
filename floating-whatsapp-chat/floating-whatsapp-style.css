@@ -1,0 +1,100 @@
+.fwc-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+/* Tambahan penting */
+.fwc-container.fwc-left {
+    left: 0;
+}
+
+.fwc-container.fwc-right {
+    right: 0;
+}
+
+
+.fwc-icon {
+    width: 60px;
+    height: 60px;
+    background-color: #25d366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.fwc-icon img {
+    width: 35px;
+    height: 35px;
+}
+
+.fwc-bubble {
+    display: none;
+    flex-direction: column;
+    background: #fff;
+    width: 280px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    margin-bottom: 10px;
+}
+
+.fwc-header {
+    background: #25d366;
+    color: #fff;
+    padding: 10px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fwc-body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.fwc-body input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 100%;
+}
+
+.fwc-message-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.fwc-message-row textarea {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    resize: none;
+    min-height: 50px;
+    box-sizing: border-box;
+}
+
+.fwc-send {
+    background: #25d366;
+    color: white;
+    padding: 0 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    min-width: 50px;
+    box-sizing: border-box;
+    margin-top: -1rem;
+}

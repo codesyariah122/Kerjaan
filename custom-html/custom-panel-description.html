@@ -1,0 +1,126 @@
+<style>
+    .about-list-item-txt {
+        max-width: 300px;
+    }
+
+    .fw-medium {
+        font-weight: 500;
+    }
+
+    .mb-0 {
+        margin-bottom: 0 !important;
+    }
+
+    .about-list-item-area {
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+        margin-bottom: 50px;
+    }
+
+    .about-list-item {
+        display: flex;
+        gap: 20px;
+    }
+
+    .about-list-item-img {
+        background-image: url('https://ptdutapersadiinstrumentasi.tokoweb.live/wp-content/uploads/2025/07/about-item-bg.svg');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .about-list-item .about-list-item-img {
+        position: relative;
+        width: 78px;
+        height: 78px;
+        padding: 4px;
+        overflow: hidden;
+    }
+
+    .about-list-item .icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 28px;
+        color: #000;
+    }
+
+    .about-list-item-img svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        pointer-events: none;
+    }
+</style>
+
+<div class="about-list-item-area">
+    <div class="about-list-item">
+        <div class="about-list-item-img" data-color="#00FFCC">
+            <!-- SVG akan disisipkan oleh JS -->
+            <span class="icon"><i class="fas fa-asterisk"></i></span>
+        </div>
+        <div class="content">
+            <h3>100% Quality Products</h3>
+            <p class="mb-0 about-list-item-txt fw-medium">We provide top-notch, carefully curated essentials to brighten
+                your little one's world.</p>
+        </div>
+    </div>
+
+    <div class="about-list-item">
+        <div class="about-list-item-img" data-color="#23D9F6">
+            <!-- SVG akan disisipkan oleh JS -->
+            <span class="icon"><i class="fas fa-box-open"></i></span>
+        </div>
+        <div class="content">
+            <h3>Authentic, Trendsetting Products</h3>
+            <p class="mb-0 about-list-item-txt fw-medium">We select the latest, most reliable products to your little
+                ones.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const svgUrl = "https://ptdutapersadiinstrumentasi.tokoweb.live/wp-content/uploads/2025/07/about-item-bg.svg";
+
+    fetch(svgUrl)
+        .then(res => res.text())
+        .then(svgText => {
+            document.querySelectorAll(".about-list-item-img").forEach(container => {
+                const bgColor = container.dataset.color || "#000";
+
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+                const svgEl = svgDoc.documentElement;
+                if (!svgEl.getAttribute("viewBox")) {
+                    svgEl.setAttribute("viewBox", "0 0 120 120"); // Adjust sesuai desain SVG
+                }
+                // Set proper dimension and positioning
+                svgEl.setAttribute("width", "100%");
+                svgEl.setAttribute("height", "100%");
+                //   svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
+                svgEl.setAttribute("preserveAspectRatio", "none");
+                svgEl.style.position = "absolute";
+                svgEl.style.top = "0";
+                svgEl.style.left = "0";
+                svgEl.style.zIndex = "0";
+                svgEl.style.display = "block";
+
+                // Remove embedded styles
+                svgEl.querySelectorAll("style").forEach(style => style.remove());
+
+                // Ganti SEMUA fill yang terlihat seperti latar brush (kecuali yang fill="none")
+                svgEl.querySelectorAll("[fill]").forEach(el => {
+                    const currentFill = el.getAttribute("fill");
+                    if (currentFill !== "none" && !currentFill.startsWith("url(")) {
+                        el.setAttribute("fill", bgColor);
+                    }
+                });
+
+                container.prepend(svgEl);
+            });
+        })
+        .catch(err => {
+            console.error("Gagal memuat SVG:", err);
+        });
+</script>

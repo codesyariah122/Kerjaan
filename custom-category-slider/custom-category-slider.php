@@ -164,6 +164,25 @@ function ccsp_enqueue_scripts()
         .category-slider .category-item .category-img img:hover{
             z-index: 99!important;
         }
+
+        /* Tambah gap & kecilkan item di mobile (<=480px) */
+        @media (max-width: 480px) {
+            .category-slider .category-item {
+                margin: 0 6px;
+            }
+            .category-slider .category-item .category-img {
+                width: 100px;
+                height: 100px;
+                padding: 5px;
+            }
+            .category-slider .category-item .category-img img {
+                height: 70px;
+                width: 90%;
+            }
+            .category-slider .category-item-title {
+                font-size: 0.9rem;
+            }
+        }
     ');
 
     // Slick init, nanti bisa dipanggil ulang via ajax
@@ -181,7 +200,8 @@ function ccsp_enqueue_scripts()
                 responsive: [
                     { breakpoint: 1024, settings: { slidesToShow: 4 }},
                     { breakpoint: 768, settings: { slidesToShow: 2 }},
-                    { breakpoint: 480, settings: { slidesToShow: 1 }}
+                    { breakpoint: 600, settings: { slidesToShow: 3 }},
+                    { breakpoint: 480, settings: { slidesToShow: 2 }}
                 ]
             });
         }
