@@ -61,38 +61,16 @@ add_action('wp_footer', function () {
 			}
 
 			if (dropdownContainer && menuToggle) {
-				const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+				dropdownContainer.addEventListener('mouseenter', () => {
+					dropdownContainer.classList.add('show-dropdown');
+					caretIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+				});
 
-				if (isTouchDevice) {
-					menuToggle.addEventListener('click', function (e) {
-						e.stopPropagation();
-						dropdownContainer.classList.toggle('show-dropdown');
-						const isOpen = dropdownContainer.classList.contains('show-dropdown');
-						caretIcon.classList.replace(
-							isOpen ? 'fa-chevron-down' : 'fa-chevron-up',
-							isOpen ? 'fa-chevron-up' : 'fa-chevron-down'
-						);
-					});
-
-					document.addEventListener('click', function () {
-						if (dropdownContainer.classList.contains('show-dropdown')) {
-							dropdownContainer.classList.remove('show-dropdown');
-							caretIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
-						}
-					});
-				} else {
-					dropdownContainer.addEventListener('mouseenter', () => {
-						dropdownContainer.classList.add('show-dropdown');
-						caretIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-					});
-
-					dropdownContainer.addEventListener('mouseleave', () => {
-						dropdownContainer.classList.remove('show-dropdown');
-						caretIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
-					});
-				}
+				dropdownContainer.addEventListener('mouseleave', () => {
+					dropdownContainer.classList.remove('show-dropdown');
+					caretIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+				});
 			}
-
 
 // 			window.addEventListener('scroll', () => {
 // 				const scrolled = window.scrollY > 10;
@@ -192,17 +170,17 @@ add_action('wp_footer', function () {
 				background-color: #fb6846;
 			}
 
-/* 			.departments-menu-v2 .dropdown-menu {
+			.departments-menu-v2 .dropdown-menu {
 				border-radius: 10px !important;
 				overflow: hidden !important;
 				box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 				min-width: 500px;
 				z-index: 9999;
-			} */
+			}
 
-/* 			.departments-menu-v2 .dropdown:not(.show-dropdown) .dropdown-menu {
+			.departments-menu-v2 .dropdown:not(.show-dropdown) .dropdown-menu {
 				display: none !important;
-			} */
+			}
 
 			.departments-menu-v2-title {
 				display: flex;
@@ -227,11 +205,11 @@ add_action('wp_footer', function () {
 				opacity: 1 !important;
 			}
 
-/* 			.stick-this .departments-menu-v2 .dropdown {
+			.stick-this .departments-menu-v2 .dropdown {
 				position: relative;
 				overflow: visible !important;
 				z-index: 999;
-			} */
+			}
 			
 
 			.mobile-nav-adjust .departments-menu-v2,
