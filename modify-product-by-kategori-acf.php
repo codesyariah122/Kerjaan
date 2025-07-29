@@ -5,7 +5,7 @@
  * @params _filter_role
  * @return kategori with role
  **/
-add_shortcode('produk_by_kategori_acf', function () {
+add_shortcode('produk_by_kategori_acf_backup', function () {
     $kategori = get_field('kategori_produk');
     if (!$kategori || !is_a($kategori, 'WP_Term')) {
         return 'Kategori tidak ditemukan';
