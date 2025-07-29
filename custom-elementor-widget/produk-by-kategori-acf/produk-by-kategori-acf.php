@@ -11,7 +11,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-// Daftarkan widget Elementor setelah plugins loaded dan Elementor aktif
+// Jajanin atuh kaka
 add_action('plugins_loaded', function () {
     if (did_action('elementor/loaded')) {
         add_action('elementor/widgets/register', function ($widgets_manager) {
