@@ -45,7 +45,12 @@ function ccsp_enqueue_scripts()
             box-shadow: none;
             text-align: center;
         }
-
+        .category-slider .category-item h3 {
+            margin: 0;
+            font-size: inherit;
+            font-weight: inherit;
+            color: inherit;
+        }
         .category-slider .category-item a {
             display: block;
             color: #333;

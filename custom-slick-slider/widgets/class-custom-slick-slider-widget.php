@@ -367,7 +367,7 @@ class Custom_Slick_Slider_Widget extends \Elementor\Widget_Base
                             <?php endif; ?>
 
                             <?php if (!empty($slide['button_link']['url'])): ?>
-                                <a href="<?php echo esc_url($slide['button_link']['url']); ?>" class="btn btn-lg btn-primary" style="background-color: '<?= $settings['button_bg_color'] ?>'"
+                                <a href="<?php echo esc_url($slide['button_link']['url']); ?>" class="btn btn-lg" style="background-color: <?php echo esc_attr($slide['button_bg_color']); ?>"
                                     <?php echo $slide['button_link']['is_external'] ? 'target="_blank"' : ''; ?>>
                                     <?php echo esc_html($slide['button_text']); ?>
                                 </a>
