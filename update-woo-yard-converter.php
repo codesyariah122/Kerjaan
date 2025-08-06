@@ -1042,7 +1042,7 @@ function woo_add_call_us_button()
 }
 
 
-<!-- <?php
+<?php
 
 /**
  * Plugin Name: WooCommerce Yard Only Converter

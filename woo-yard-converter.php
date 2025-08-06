@@ -269,65 +269,65 @@ function woo_add_beli_langsung_button()
                     wrapper.appendChild(waBtn);
                 }
 
-                waBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
+                document.addEventListener('click', function(e) {
+                    if (e.target.closest('.beli-langsung-wa')) {
+                        e.preventDefault();
 
-                    const unitInput = document.querySelector('input[name="unit_satuan"]:checked');
-                    const unit = unitInput ? parseFloat(unitInput.value) || 1 : 1;
-                    const unitSelected = getSelectedUnit();
+                        const unitInput = document.querySelector('input[name="unit_satuan"]:checked');
+                        const unit = unitInput ? parseFloat(unitInput.value) || 1 : 1;
+                        const unitSelected = getSelectedUnit();
+                        const qty = localStorage.getItem('yard_value') ? localStorage.getItem('yard_value') : 1;
 
-                    const qtyInput = document.querySelector('input[name="quantity"]');
-                    const qty = qtyInput ? parseFloat(qtyInput.value) || 1 : 1;
+                        const title = document.querySelector('h1.product_title')?.textContent.trim() || 'Produk';
+                        const url = window.location.href;
 
-                    const title = document.querySelector('h1.product_title')?.textContent.trim() || 'Produk';
-                    const url = window.location.href;
+                        const variationID = parseInt(jQuery('input[name="variation_id"]').val());
+                        const variationData = jQuery('form.variations_form').data('product_variations');
+                        const variation = variationData?.find(v => v.variation_id === variationID);
 
-                    const variationID = parseInt(jQuery('input[name="variation_id"]').val());
-                    const variationData = jQuery('form.variations_form').data('product_variations');
-                    const variation = variationData?.find(v => v.variation_id === variationID);
-
-                    let hargaRaw = 0;
-                    let gambar = '-';
-                    let warna = '-';
-                    for (const [key, value] of Object.entries(variation.attributes)) {
-                        if (key.includes('attribute_pa_warna')) {
-                            warna = value.replace(/-/g, ' ').toUpperCase();
-                            break;
+                        let hargaRaw = 0;
+                        let gambar = '-';
+                        let warna = '-';
+                        for (const [key, value] of Object.entries(variation.attributes)) {
+                            if (key.includes('attribute_pa_warna')) {
+                                warna = value.replace(/-/g, ' ').toUpperCase();
+                                break;
+                            }
                         }
+
+                        if (variation) {
+                            hargaRaw = variation.display_price || 0;
+
+                            // Ambil warna dari attributes
+                            const attrWarna = Object.values(variation.attributes).find(v => v.includes('warna'));
+                            if (attrWarna) {
+                                warna = attrWarna.replace(/-/g, ' ').toUpperCase();
+                            }
+
+                            // Ambil gambar dari object variation.image.src
+                            if (variation.image && variation.image.src) {
+                                gambar = variation.image.src;
+                            }
+                        }
+
+                        const total = hargaRaw * unit;
+                        const hargaFormat = new Intl.NumberFormat('id-ID').format(hargaRaw);
+                        const totalFormat = new Intl.NumberFormat('id-ID').format(total);
+
+                        const pesan = `Halo Admin <?php echo $site_name; ?>, saya tertarik untuk membeli produk berikut:\n\n` +
+                            `📌 *Nama Produk:* ${title}\n` +
+                            `📏 *Jumlah:* ${qty} ${unitSelected}\n` +
+                            `🎨 *Warna:* ${warna}\n` +
+                            `🖼️ *Gambar:* ${gambar}\n` +
+                            `💸 *Harga per ${unit} ${unitSelected}:* Rp${hargaFormat}\n` +
+                            `💳 *Total Bayar:* Rp${totalFormat}\n\n` +
+                            `🔗 *Link Produk:* ${url}\n\n` +
+                            `Mohon konfirmasinya ya, terima kasih 🙏`;
+
+                        const nomor = waBtn.getAttribute('data-wa');
+                        const waLink = `https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`;
+                        window.open(waLink, '_blank');
                     }
-
-                    if (variation) {
-                        hargaRaw = variation.display_price || 0;
-
-                        // Ambil warna dari attributes
-                        const attrWarna = Object.values(variation.attributes).find(v => v.includes('warna'));
-                        if (attrWarna) {
-                            warna = attrWarna.replace(/-/g, ' ').toUpperCase();
-                        }
-
-                        // Ambil gambar dari object variation.image.src
-                        if (variation.image && variation.image.src) {
-                            gambar = variation.image.src;
-                        }
-                    }
-
-                    const total = hargaRaw * unit;
-                    const hargaFormat = new Intl.NumberFormat('id-ID').format(hargaRaw);
-                    const totalFormat = new Intl.NumberFormat('id-ID').format(total);
-
-                    const pesan = `Halo Admin <?php echo $site_name; ?>, saya tertarik untuk membeli produk berikut:\n\n` +
-                        `📌 *Nama Produk:* ${title}\n` +
-                        `📏 *Jumlah:* ${qty} ${unitSelected}\n` +
-                        `🎨 *Warna:* ${warna}\n` +
-                        `🖼️ *Gambar:* ${gambar}\n` +
-                        `💸 *Harga per ${unit} ${unitSelected}:* Rp${hargaFormat}\n` +
-                        `💳 *Total Bayar:* Rp${totalFormat}\n\n` +
-                        `🔗 *Link Produk:* ${url}\n\n` +
-                        `Mohon konfirmasinya ya, terima kasih 🙏`;
-
-                    const nomor = waBtn.getAttribute('data-wa');
-                    const waLink = `https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`;
-                    window.open(waLink, '_blank');
                 });
             });
         </script>
@@ -516,7 +516,6 @@ function woo_converter_input_fields_conditional()
     </div>
 
     <script>
-        console.log("Input yard ditampilkan");
         document.addEventListener('DOMContentLoaded', function() {
             const meterInput = document.querySelector('#input_satuan');
             const unitRadios = document.querySelectorAll('input[name="input_unit"]');
@@ -609,13 +608,12 @@ function woo_converter_input_fields_conditional()
             // meterInput.addEventListener('input', updateQty);
             meterInput.addEventListener('input', function() {
                 const maxYard = 60;
-                const value = parseFloat(meterInput.value) || 0;
+
+                let value = parseFloat(meterInput.value);
+                if (isNaN(value)) return;
+
                 const unit = getSelectedUnit();
                 let yardVal = unit === 'meter' ? convertToYard(value) : value;
-
-                const alertBox = document.getElementById('yard-max-alert');
-
-                localStorage.setItem('yard_value', yardVal);
 
                 if (yardVal > maxYard) {
                     Swal.fire({
@@ -625,18 +623,33 @@ function woo_converter_input_fields_conditional()
                         confirmButtonColor: '#25D366',
                     });
 
-                    meterInput.value = unit === 'meter' ? (maxYard * 0.9144).toFixed(2) : maxYard;
+                    meterInput.value = unit === 'meter' ?
+                        (maxYard * 0.9144).toFixed(2) :
+                        maxYard;
                     yardVal = maxYard;
-                    updateQty();
                 }
 
-                // Tampilkan/hilangkan alert teks biasa
+                const alertBox = document.getElementById('yard-max-alert');
                 if (alertBox) {
                     alertBox.style.display = yardVal >= maxYard ? 'block' : 'none';
                 }
 
+                if (!isNaN(yardVal)) {
+                    localStorage.setItem('yard_value', yardVal);
+                }
+
                 updateQty();
             });
+
+            meterInput.addEventListener('blur', function() {
+                const val = parseFloat(meterInput.value);
+                if (!isNaN(val)) {
+                    // hanya tambahkan .00 jika angka bulat
+                    meterInput.value = Number.isInteger(val) ? val.toFixed(2) : val;
+                }
+            });
+
+
             unitRadios.forEach(radio => radio.addEventListener('change', updateQty));
 
             // Update harga saat variasi ditemukan
