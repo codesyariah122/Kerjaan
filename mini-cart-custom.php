@@ -1,9 +1,16 @@
 <?php
 if (! defined('ABSPATH')) exit;
+
 do_action('woocommerce_before_mini_cart');
 
 $cart_items = WC()->cart->get_cart();
 $first_cart_item = reset($cart_items);
+
+if (! $first_cart_item || ! isset($first_cart_item['data']) || ! is_object($first_cart_item['data'])) {
+    echo '<p>Keranjang belanja kosong atau data tidak valid.</p>';
+    return; // stop render mini cart custom
+}
+
 $first_product = $first_cart_item['data'];
 $product_id = $first_product->is_type('variation') ? $first_product->get_parent_id() : $first_product->get_id();
 
@@ -51,6 +58,7 @@ wp_reset_postdata();
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-top: 1rem;
         margin-bottom: 20px;
     }
 
@@ -189,7 +197,7 @@ wp_reset_postdata();
     }
 </style>
 
-<div class="custom-mini-cart-popup">
+<div class="custom-mini-cart-popup" id="custom-mini-cart">
     <div class="mini-cart-header">
         <h3><?php echo esc_html($first_product->get_name()); ?></h3>
     </div>
@@ -316,7 +324,19 @@ wp_reset_postdata();
         function updateTotal() {
             const qty = parseFloat(quantityInput.value);
             const total = !isNaN(qty) ? qty * unitPrice : 0;
-            totalPriceEl.textContent = `Total Harga: ${formatRupiah(total)} / ${unitLabel}`;
+            totalPriceEl.textContent = Total Harga: $ {
+                formatRupiah(total)
+            }
+
+            // AJAX untuk update cart WooCommerce
+            const xhr = new XMLHttpRequest();
+            const data = new FormData();
+            data.append('action', 'update_cart_quantity');
+            data.append('input_satuan', qty);
+            data.append('_wpnonce', myAjaxData.nonce); // Tambahkan nonce
+
+            xhr.open('POST', myAjaxData.ajax_url, true);
+            xhr.send(data);
         }
 
         quantityInput.addEventListener('input', updateTotal);
@@ -324,4 +344,18 @@ wp_reset_postdata();
 
     });
 </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const miniCart = document.getElementById("custom-mini-cart");
+
+        document.addEventListener("click", function(event) {
+            // Jika klik di luar elemen mini cart
+            if (!miniCart.contains(event.target)) {
+                miniCart.style.display = "none";
+            }
+        });
+    });
+</script>
+
 <?php do_action('woocommerce_after_mini_cart'); ?>

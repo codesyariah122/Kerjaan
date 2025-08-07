@@ -22,7 +22,7 @@ function woo_add_unit_converter_admin_field()
     woocommerce_wp_checkbox([
         'id' => '_enable_unit_converter',
         'label' => __('Aktifkan Satuan Yard?', 'woocommerce'),
-        'description' => __('Tampilkan input satuan yard di halaman produk ini.'),
+        'description' => __('Tampilkan input satuan yard / kg di halaman produk ini.'),
     ]);
 
     woocommerce_wp_text_input([
@@ -499,6 +499,10 @@ function woo_converter_input_fields_conditional()
                         <input type="radio" name="input_unit" value="yard" id="unit_yard" checked>
                         Yard
                     </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="input_unit" value="kg" id="unit_kg">
+                        Kilogram
+                    </label>
 
                     <div class="woo-unit-box">
                         <input type="number" step="0.01" min="0.1" id="input_satuan" name="input_satuan" value="1" />
@@ -538,8 +542,14 @@ function woo_converter_input_fields_conditional()
             function updateQty() {
                 const length = parseFloat(meterInput.value) || 0;
                 const unit = getSelectedUnit();
-                qtyInput.value = unit === 'meter' ? Math.ceil(convertToYard(length)) : Math.ceil(length);
-                unitLabel.textContent = unit === 'meter' ? 'Meter' : 'Yard';
+
+                if (unit === 'yard') {
+                    qtyInput.value = Math.ceil(length);
+                    unitLabel.textContent = 'Yard';
+                } else {
+                    qtyInput.value = Math.ceil(length);
+                    unitLabel.textContent = 'Kg';
+                }
             }
 
             function updatePrice(variation) {
@@ -567,11 +577,15 @@ function woo_converter_input_fields_conditional()
                 // });
                 const priceElem = document.querySelector('.woocommerce-variation-price .price');
                 if (priceElem) {
-                    priceElem.innerHTML = `Rp ${Math.round(totalPrice).toLocaleString('id-ID')} (${length} Yard)`;
+                    // priceElem.innerHTML = `Rp ${Math.round(totalPrice).toLocaleString('id-ID')} (${length} Yard)`;
+                    const unitLabelText = unit === 'yard' ? 'Yard' : 'Kg';
+                    priceElem.innerHTML = `Rp ${Math.round(totalPrice).toLocaleString('id-ID')} (${length} ${unitLabelText})`;
+
+                    priceDisplay.textContent = 'Harga per ' + unitLabelText + ': Rp ' + Math.round(variation.display_price).toLocaleString('id-ID') + ` / ${unitLabelText} (Bruto)`;
                 }
                 // Update harga per yard
                 if (priceDisplay) {
-                    priceDisplay.textContent = 'Harga per Yard: Rp ' + Math.round(variation.display_price).toLocaleString('id-ID') + '- / Yard (Bruto)';
+                    priceDisplay.textContent = `Harga per ${unitLabelText}: Rp ` + Math.round(variation.display_price).toLocaleString('id-ID') + '- / Yard (Bruto)';
                 } else {
                     // Jika harga per yard tidak ada, tampilkan tombol Call Us
                     const nomor_wa = '<?php echo esc_js($nomor_wa); ?>'; // Ambil nomor WA
@@ -615,7 +629,7 @@ function woo_converter_input_fields_conditional()
                 const unit = getSelectedUnit();
                 let yardVal = unit === 'meter' ? convertToYard(value) : value;
 
-                if (yardVal > maxYard) {
+                if (unit === 'yard' && yardVal > maxYard) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Maksimal Order 60 Yard',
@@ -623,9 +637,7 @@ function woo_converter_input_fields_conditional()
                         confirmButtonColor: '#25D366',
                     });
 
-                    meterInput.value = unit === 'meter' ?
-                        (maxYard * 0.9144).toFixed(2) :
-                        maxYard;
+                    meterInput.value = maxYard;
                     yardVal = maxYard;
                 }
 
