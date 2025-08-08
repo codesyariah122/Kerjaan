@@ -1,6 +1,9 @@
 <?php
 if (! defined('ABSPATH')) exit;
 
+$cart_items = WC()->cart->get_cart();
+if (empty($cart_items)) return;
+
 do_action('woocommerce_before_mini_cart');
 
 $cart_items = WC()->cart->get_cart();

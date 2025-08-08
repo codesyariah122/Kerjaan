@@ -172,20 +172,86 @@ function ccsp_enqueue_scripts()
 
         /* Tambah gap & kecilkan item di mobile (<=480px) */
         @media (max-width: 480px) {
+            .slick-list .slick-track {
+                margin-left: -1rem;
+            }
             .category-slider .category-item {
-                margin: 0 6px;
+                margin: 0 4px;
             }
             .category-slider .category-item .category-img {
-                width: 100px;
-                height: 100px;
-                padding: 5px;
+                width: 150px;
+                height: 150px;
+                padding: 15px;
             }
             .category-slider .category-item .category-img img {
-                height: 70px;
-                width: 90%;
+                height: 150px;
+                width: 300px;
             }
             .category-slider .category-item-title {
-                font-size: 0.9rem;
+                font-size: 1.5rem;
+            }
+        }
+        @media (min-width: 481px) and (max-width: 767px) {
+            .slick-list .slick-track {
+                margin-left: -1rem;
+            }
+            .category-slider .category-item {
+                margin: 0 4px;
+            }
+            .category-slider .category-item .category-img {
+                width: 150px;
+                height: 150px;
+                padding: 15px;
+            }
+            .category-slider .category-item .category-img img {
+                height: 150px;
+                width: 300px;
+            }
+            .category-slider .category-item-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 900px) {
+            .slick-list .slick-track {
+                margin-left: -1rem;
+            }
+            .category-slider .category-item {
+                margin: 0 4px;
+            }
+            .category-slider .category-item .category-img {
+                width: 150px;
+                height: 150px;
+                padding: 15px;
+            }
+            .category-slider .category-item .category-img img {
+                height: 150px;
+                width: 300px;
+            }
+            .category-slider .category-item-title {
+                font-size: 1.5rem;
+            }
+        }
+
+            /* Galaxy Tab Landscape (1024px) */
+        @media (min-width: 901px) and (max-width: 1024px) {
+            .slick-list .slick-track {
+                margin-left: -1rem;
+            }
+            .category-slider .category-item {
+                margin: 0 4px;
+            }
+            .category-slider .category-item .category-img {
+                width: 150px;
+                height: 150px;
+                padding: 15px;
+            }
+            .category-slider .category-item .category-img img {
+                height: 150px;
+                width: 300px;
+            }
+            .category-slider .category-item-title {
+                font-size: 1.5rem;
             }
         }
     ');
