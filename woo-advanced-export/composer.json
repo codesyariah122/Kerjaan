@@ -1,0 +1,23 @@
+{
+  "name": "puji/woo-advanced-export",
+  "description": "Woo Advanced Export - Ekspor produk WooCommerce dengan mapping custom dan format CSV/XLS/XLSX.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Puji Ermanto",
+      "email": "pujiermanto@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.4",
+    "phpoffice/phpspreadsheet": "1.28",
+    "maennchen/zipstream-php": "2.1",
+    "psr/http-message": "1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "WooAdvancedExport\\": "includes/"
+    }
+  }
+}

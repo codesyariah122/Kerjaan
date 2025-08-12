@@ -8,10 +8,11 @@ class FRC_Flashsale_Stock
     public function __construct()
     {
         add_action('woocommerce_add_to_cart', [$this, 'reserve_stock'], 10, 6);
-        add_action('woocommerce_cart_item_removed', [$this, 'restore_stock']);
+        // add_action('woocommerce_cart_item_removed', [$this, 'restore_stock']);
+        add_action('woocommerce_cart_item_removed', [$this, 'restore_stock'], 10, 2);
     }
 
-    public function reserve_stock($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data)
+    public function reserve_stock($cart_item_key, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = [])
     {
         $product = wc_get_product($product_id);
 
@@ -22,8 +23,9 @@ class FRC_Flashsale_Stock
         }
 
         if ($product && $product->managing_stock()) {
-            // Kurangi stok
-            wc_update_product_stock($product, -$quantity);
+            // Kurangi stok (gunakan wc_update_product_stock dengan jumlah negatif)
+            wc_update_product_stock($product, -absint($quantity));
+
             // Simpan info reservasi dan waktu untuk keperluan cron restore stok
             WC()->session->set('frc_reserved_' . $cart_item_key, ['id' => $product_id, 'qty' => $quantity]);
             WC()->session->set('frc_time_' . $cart_item_key, time());
@@ -33,15 +35,16 @@ class FRC_Flashsale_Stock
     public function restore_stock($cart_item_key, $cart)
     {
         $reserved = WC()->session->get('frc_reserved_' . $cart_item_key);
-        if ($reserved) {
+        if ($reserved && isset($reserved['id']) && isset($reserved['qty'])) {
             $product = wc_get_product($reserved['id']);
             if ($product && $product->managing_stock()) {
                 // Kembalikan stok
-                wc_update_product_stock($product, $reserved['qty']);
-                // Hapus data session reservasi
-                WC()->session->__unset('frc_reserved_' . $cart_item_key);
-                WC()->session->__unset('frc_time_' . $cart_item_key);
+                wc_update_product_stock($product, absint($reserved['qty']));
             }
+
+            // Hapus data session reservasi
+            WC()->session->__unset('frc_reserved_' . $cart_item_key);
+            WC()->session->__unset('frc_time_' . $cart_item_key);
         }
     }
 }

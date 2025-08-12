@@ -1,0 +1,9 @@
+{
+  "name": "yourname/woo-export-import-pro",
+  "description": "Woo Export Import Pro plugin (XLSX optional via PhpSpreadsheet).",
+  "type": "wordpress-plugin",
+  "require": {
+    "php": ">=7.4",
+    "phpoffice/phpspreadsheet": "^1.26"
+  }
+}

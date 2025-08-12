@@ -29,10 +29,7 @@ class FRC_Abandoned_Cart_Cron
     {
         global $wpdb;
 
-        $sessions = $wpdb->get_results("
-            SELECT session_key, session_value 
-            FROM {$wpdb->prefix}woocommerce_sessions
-        ");
+        $sessions = $wpdb->get_results("SELECT session_key, session_value FROM {$wpdb->prefix}woocommerce_sessions");
 
         foreach ($sessions as $session) {
             $data = maybe_unserialize($session->session_value);

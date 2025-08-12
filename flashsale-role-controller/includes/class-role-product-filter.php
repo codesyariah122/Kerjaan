@@ -67,11 +67,13 @@ class FRC_Role_Product_Filter
 
         if (is_user_logged_in()) {
             $user = wp_get_current_user();
-            $meta_query[] = [
-                'key'     => '_visible_for_role',
-                'value'   => $user->roles[0],
-                'compare' => '='
-            ];
+            if (!empty($user->roles)) {
+                $meta_query[] = [
+                    'key'     => '_visible_for_role',
+                    'value'   => $user->roles[0],
+                    'compare' => '='
+                ];
+            }
         } else {
             // Guest hanya bisa lihat produk umum & produk untuk user
             $meta_query[] = [
@@ -104,7 +106,6 @@ class FRC_Role_Product_Filter
             }
 
             if ($visible_role === 'user') {
-                // Jika tidak login, redirect login
                 if (!is_user_logged_in()) {
                     wp_redirect(wp_login_url(get_permalink($product_id)));
                     exit;
