@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * Plugin Name: Auto Coupon Code
+ * Description: Automatic apply coupon code on cart & checkout system
+ * Author: Puji Ermanto <pujiermanto@gmail.com> | AKA Dadang Sukamenak
+ * Author URI: https://pujiermanto-portfolio.vercel.app
+ */
 add_action('wp', 'auto_apply_all_active_coupons_safe');
 
 function auto_apply_all_active_coupons_safe()
@@ -35,23 +42,35 @@ function auto_apply_all_active_coupons_safe()
         // Hanya apply kalau valid dan belum ada di cart
         if ($coupon->is_valid() && ! WC()->cart->has_discount($code)) {
             WC()->cart->apply_coupon($code);
-            $applied_coupon_code = $code; // Simpan kode kupon yang dipakai
+            $applied_coupon_code = $code;
         }
     }
 
-    // Bersihkan pesan error yang muncul akibat auto apply
+    // Jika tidak ada kupon baru diaplikasikan, ambil kupon yang sudah ada di cart
+    if (!$applied_coupon_code && !empty(WC()->cart->get_applied_coupons())) {
+        $applied_coupon_code = WC()->cart->get_applied_coupons()[0];
+    }
+
     wc_clear_notices();
 
-    // Isi otomatis input coupon code di cart/checkout
     if ($applied_coupon_code) {
         add_action('wp_footer', function () use ($applied_coupon_code) {
 ?>
             <script type="text/javascript">
                 document.addEventListener('DOMContentLoaded', function() {
-                    var couponInput = document.querySelector('input#coupon_code');
-                    if (couponInput) {
-                        couponInput.value = '<?php echo esc_js($applied_coupon_code); ?>';
+                    function setCouponValue() {
+                        var couponInput = document.querySelector('input#coupon_code') ||
+                            document.querySelector('input[name="coupon_code"]') ||
+                            document.querySelector('input[placeholder*="Coupon"]');
+
+                        if (couponInput && couponInput.value.trim() === '') {
+                            couponInput.value = '<?php echo esc_js($applied_coupon_code); ?>';
+                        }
                     }
+
+                    setCouponValue();
+                    jQuery(document.body).on('updated_wc_div updated_cart_totals updated_checkout', setCouponValue);
+                    setInterval(setCouponValue, 1000);
                 });
             </script>
 <?php

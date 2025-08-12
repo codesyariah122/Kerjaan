@@ -25,22 +25,138 @@ class WAE_Plugin
 
     public function __construct()
     {
-        // load optional phpspreadsheet
+        // Load optional PhpSpreadsheet
         if (file_exists(__DIR__ . '/vendor/autoload.php')) {
             require_once __DIR__ . '/vendor/autoload.php';
             if (class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
                 $this->has_phpspreadsheet = true;
             }
         }
+
         add_action('admin_menu', array($this, 'register_menu'));
         add_action('admin_post_wae_save_profile', array($this, 'save_profile'));
         add_action('admin_post_wae_delete_profile', array($this, 'delete_profile'));
         add_action('admin_post_wae_export_products', array($this, 'export_products'));
         add_action('admin_post_wae_export_orders', array($this, 'export_orders'));
         add_action('admin_post_wae_export_users', array($this, 'export_users'));
+
+        // Import actions
+        add_action('admin_post_wae_import_products', array($this, 'import_products'));
+        add_action('admin_post_wae_import_orders', array($this, 'import_orders'));
+        add_action('admin_post_wae_import_users', array($this, 'import_users'));
+
         // Enqueue SweetAlert
         add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
     }
+
+    public function register_menu()
+    {
+        $cap = 'manage_woocommerce';
+        add_menu_page('Woo Advanced Export', 'Woo Advanced Export', $cap, 'wae_main', array($this, 'page_export'), 'dashicons-download', 56);
+        add_submenu_page('wae_main', 'Manage Mappings', 'Manage Mappings', $cap, 'wae_mappings', array($this, 'page_mappings'));
+        add_submenu_page('wae_main', 'Export Products', 'Export Products', $cap, 'wae_export', array($this, 'page_export_products'));
+        add_submenu_page('wae_main', 'Import Products', 'Import Products', $cap, 'wae_import_products', array($this, 'page_import_products'));
+        add_submenu_page('wae_main', 'Export Orders', 'Export Orders', $cap, 'wae_export_orders', array($this, 'page_export_orders'));
+        add_submenu_page('wae_main', 'Import Orders', 'Import Orders', $cap, 'wae_import_orders', array($this, 'page_import_orders'));
+        add_submenu_page('wae_main', 'Export Users', 'Export Users', $cap, 'wae_export_users', array($this, 'page_export_users'));
+        add_submenu_page('wae_main', 'Import Users', 'Import Users', $cap, 'wae_import_users', array($this, 'page_import_users'));
+    }
+
+    // Import pages
+    public function page_import_products()
+    {
+        if (!current_user_can('manage_woocommerce')) wp_die('No.');
+?>
+        <div class="wrap">
+            <h1>Import Products</h1>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="wae_import_products">
+                <?php wp_nonce_field('wae_import_nonce', 'wae_import_nonce_field'); ?>
+                <table class="form-table">
+                    <tr>
+                        <th>File</th>
+                        <td><input type="file" name="import_file" required></td>
+                    </tr>
+                    <tr>
+                        <th>Format</th>
+                        <td>
+                            <select name="format">
+                                <option value="csv">CSV</option>
+                                <option value="xls">XLS (HTML)</option>
+                                <option value="xlsx">XLSX</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+                <?php submit_button('Import Products'); ?>
+            </form>
+        </div>
+    <?php
+    }
+
+    public function page_import_orders()
+    {
+        if (!current_user_can('manage_woocommerce')) wp_die('No.');
+    ?>
+        <div class="wrap">
+            <h1>Import Orders</h1>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="wae_import_orders">
+                <?php wp_nonce_field('wae_import_nonce', 'wae_import_nonce_field'); ?>
+                <table class="form-table">
+                    <tr>
+                        <th>File</th>
+                        <td><input type="file" name="import_file" required></td>
+                    </tr>
+                    <tr>
+                        <th>Format</th>
+                        <td>
+                            <select name="format">
+                                <option value="csv">CSV</option>
+                                <option value="xls">XLS (HTML)</option>
+                                <option value="xlsx">XLSX</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+                <?php submit_button('Import Orders'); ?>
+            </form>
+        </div>
+    <?php
+    }
+
+    public function page_import_users()
+    {
+        if (!current_user_can('manage_woocommerce')) wp_die('No.');
+    ?>
+        <div class="wrap">
+            <h1>Import Users</h1>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="wae_import_users">
+                <?php wp_nonce_field('wae_import_nonce', 'wae_import_nonce_field'); ?>
+                <table class="form-table">
+                    <tr>
+                        <th>File</th>
+                        <td><input type="file" name="import_file" required></td>
+                    </tr>
+                    <tr>
+                        <th>Format</th>
+                        <td>
+                            <select name="format">
+                                <option value="csv">CSV</option>
+                                <option value="xls">XLS (HTML)</option>
+                                <option value="xlsx">XLSX</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+                <?php submit_button('Import Users'); ?>
+            </form>
+        </div>
+    <?php
+    }
+
+    // Implement import functions here...
 
     public function enqueue_scripts()
     {
@@ -50,7 +166,7 @@ class WAE_Plugin
 
     public function add_delete_confirmation_script()
     {
-?>
+    ?>
         <script type="text/javascript">
             jQuery(document).ready(function($) {
                 $('.button-link-delete').on('click', function(e) {
@@ -82,17 +198,7 @@ class WAE_Plugin
     <?php
     }
 
-
-    public function register_menu()
-    {
-        $cap = 'manage_woocommerce';
-        add_menu_page('Woo Advanced Export', 'Woo Advanced Export', $cap, 'wae_main', array($this, 'page_export'), 'dashicons-download', 56);
-        add_submenu_page('wae_main', 'Export Products', 'Export Products', $cap, 'wae_export', array($this, 'page_export_products'));
-        add_submenu_page('wae_main', 'Mapping Profiles', 'Mapping Profiles', $cap, 'wae_mappings', array($this, 'page_mappings'));
-        add_submenu_page('wae_main', 'Export Orders', 'Export Orders', $cap, 'wae_export_orders', array($this, 'page_export_orders'));
-        add_submenu_page('wae_main', 'Export Users', 'Export Users', $cap, 'wae_export_users', array($this, 'page_export_users'));
-    }
-
+    // Other existing methods...
     private function get_profiles()
     {
         $raw = get_option('wae_mapping_profiles', '{}');
@@ -111,32 +217,155 @@ class WAE_Plugin
         if (!current_user_can('manage_woocommerce')) wp_die('No.');
     ?>
         <div class="wrap">
-            <h1>Woo Advanced Export</h1>
-            <p>Pilih jenis data yang ingin Anda export:</p>
-            <ul>
-                <li><a href="<?php echo admin_url('admin.php?page=wae_export'); ?>">Export Products</a></li>
-                <li><a href="<?php echo admin_url('admin.php?page=wae_export_orders'); ?>">Export Orders</a></li>
-                <li><a href="<?php echo admin_url('admin.php?page=wae_export_users'); ?>">Export Users</a></li>
-            </ul>
+            <h1>Woo Advanced Export & Import</h1>
+            <p>Pilih jenis data yang ingin Anda export atau import:</p>
+
+            <p>
+                <a class="wae-button" href="<?php echo admin_url('admin.php?page=wae_mappings'); ?>">Manage Mapping Profiles</a>
+            </p>
+
+            <div class="wae-tabs">
+                <button class="wae-tab-button active" onclick="openTab(event, 'export')">Export</button>
+                <button class="wae-tab-button" onclick="openTab(event, 'import')">Import</button>
+            </div>
+
+            <div id="export" class="wae-tab-content active">
+                <div class="wae-flex-container">
+                    <div class="wae-flex-item">
+                        <a class="wae-button" href="<?php echo admin_url('admin.php?page=wae_export'); ?>">Export Products</a>
+                    </div>
+                    <div class="wae-flex-item">
+                        <a class="wae-button" href="<?php echo admin_url('admin.php?page=wae_export_orders'); ?>">Export Orders</a>
+                    </div>
+                    <div class="wae-flex-item">
+                        <a class="wae-button" href="<?php echo admin_url('admin.php?page=wae_export_users'); ?>">Export Users</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="import" class="wae-tab-content">
+                <div class="wae-flex-container">
+                    <div class="wae-flex-item">
+                        <a class="wae-button" href="<?php echo admin_url('admin.php?page=wae_import_products'); ?>">Import Products</a>
+                    </div>
+                    <div class="wae-flex-item">
+                        <a class="wae-button" href="<?php echo admin_url('admin.php?page=wae_import_orders'); ?>">Import Orders</a>
+                    </div>
+                    <div class="wae-flex-item">
+                        <a class="wae-button" href="<?php echo admin_url('admin.php?page=wae_import_users'); ?>">Import Users</a>
+                    </div>
+                </div>
+            </div>
+
             <hr>
-            <p><a href="<?php echo admin_url('admin.php?page=wae_mappings'); ?>">Manage Mapping Profiles</a></p>
         </div>
+
+        <style>
+            .wae-tabs {
+                display: flex;
+                margin-bottom: 20px;
+            }
+
+            .wae-tab-button {
+                background-color: #007cba;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                cursor: pointer;
+                border-radius: 5px 5px 0 0;
+                margin-right: 5px;
+                transition: background-color 0.3s;
+            }
+
+            .wae-tab-button:hover {
+                background-color: #005a8c;
+            }
+
+            .wae-tab-button.active {
+                background-color: #005a8c;
+            }
+
+            .wae-tab-content {
+                display: none;
+                padding: 15px;
+                border: 1px solid #007cba;
+                border-radius: 0 0 5px 5px;
+            }
+
+            .wae-tab-content.active {
+                display: block;
+            }
+
+            .wae-flex-container {
+                display: flex;
+                justify-content: flex-start;
+                gap: 5px;
+                /* Reduced space between buttons */
+            }
+
+            .wae-flex-item {
+                flex: none;
+                /* Prevent items from stretching */
+            }
+
+            .wae-list {
+                list-style-type: none;
+                padding: 0;
+            }
+
+            .wae-button {
+                display: inline-block;
+                padding: 10px 15px;
+                background-color: #007cba;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                transition: background-color 0.3s;
+                text-align: center;
+                /* Center text in button */
+            }
+
+            .wae-button:hover {
+                background-color: #005a8c;
+                color: #fffdcc;
+            }
+        </style>
+
+        <script>
+            function openTab(evt, tabName) {
+                var i, tabcontent, tabbuttons;
+                tabcontent = document.getElementsByClassName("wae-tab-content");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].classList.remove("active");
+                }
+                tabbuttons = document.getElementsByClassName("wae-tab-button");
+                for (i = 0; i < tabbuttons.length; i++) {
+                    tabbuttons[i].classList.remove("active");
+                }
+                document.getElementById(tabName).classList.add("active");
+                evt.currentTarget.classList.add("active");
+            }
+        </script>
     <?php
     }
-
 
     public function page_export_products()
     {
         if (!current_user_can('manage_woocommerce')) wp_die('No.');
         $profiles = $this->get_profiles();
     ?>
-        <div class="wrap">
+        <div class="wrap export-products-container">
             <h1>Export Products</h1>
             <?php if (!$this->has_phpspreadsheet): ?>
                 <div class="notice notice-warning">
                     <p>Note: .xlsx requires PhpSpreadsheet (run composer in plugin folder to enable).</p>
                 </div>
             <?php endif; ?>
+
+            <p>
+                <a class="wae-button" href="<?php echo admin_url('admin.php?page=wae_mappings'); ?>">Manage Mapping Profiles</a>
+            </p>
+
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                 <input type="hidden" name="action" value="wae_export_products">
                 <?php wp_nonce_field('wae_export_nonce', 'wae_export_nonce_field'); ?>
@@ -164,18 +393,88 @@ class WAE_Plugin
                     </tr>
                     <tr>
                         <th>Delimiter (CSV)</th>
-                        <td><input type="text" name="delimiter" value="," maxlength="1" style="width:50px"></td>
+                        <td><input type="text" name="delimiter" value="," maxlength="1"></td>
                     </tr>
                     <tr>
                         <th>Batch size</th>
                         <td><input type="number" name="batch" value="200" min="50" max="5000"></td>
                     </tr>
                 </table>
-                <?php submit_button('Export Products'); ?>
+                <?php submit_button('Export Products', 'primary', 'submit', true); ?>
             </form>
-            <hr>
-            <p><a href="<?php echo admin_url('admin.php?page=wae_mappings'); ?>">Manage Mapping Profiles</a></p>
         </div>
+
+        <style>
+            .export-products-container {
+                margin: 20px 0;
+            }
+
+            .export-products-container h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .notice {
+                background-color: #fff3cd;
+                border-color: #ffeeba;
+                color: #856404;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+
+            .form-table {
+                width: 100%;
+                margin-bottom: 20px;
+                border-collapse: collapse;
+            }
+
+            .form-table th {
+                text-align: left;
+                padding: 10px;
+                background-color: #f9f9f9;
+                border: 1px solid #ddd;
+            }
+
+            .form-table td {
+                padding: 10px;
+                border: 1px solid #ddd;
+            }
+
+            .form-table input[type="text"],
+            .form-table input[type="number"],
+            .form-table select {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+
+            .form-table input[type="text"]:focus,
+            .form-table input[type="number"]:focus,
+            .form-table select:focus {
+                border-color: #007cba;
+                outline: none;
+            }
+
+            .wae-button {
+                background-color: #007cba;
+                color: white;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                text-decoration: none;
+                transition: background-color 0.3s;
+            }
+
+            .wae-button:hover {
+                background-color: #005a8c;
+                color: #fff;
+            }
+        </style>
+
     <?php
     }
 
@@ -186,7 +485,7 @@ class WAE_Plugin
         // Ambil semua mapping profiles
         $profiles = $this->get_profiles();
 
-        // Default kolom untuk order export (bisa kamu sesuaikan)
+        // Default kolom untuk order export
         $fields = array(
             'ID' => 'Order ID',
             'date_created' => 'Date Created',
@@ -196,36 +495,36 @@ class WAE_Plugin
             'billing_first_name' => 'Billing First Name',
             'billing_last_name' => 'Billing Last Name',
             'shipping_address_1' => 'Shipping Address 1',
-            'shipping_address_2' => 'Shipping Address 2', // Kolom baru
-            'billing_address_1' => 'Billing Address 1', // Kolom baru
-            'billing_address_2' => 'Billing Address 2', // Kolom baru
-            'payment_method' => 'Payment Method', // Kolom baru
+            'shipping_address_2' => 'Shipping Address 2',
+            'billing_address_1' => 'Billing Address 1',
+            'billing_address_2' => 'Billing Address 2',
+            'payment_method' => 'Payment Method',
             'payment_via' => 'Payment Via',
-            'product_name' => 'Product Name', // Kolom item order
-            'quantity' => 'Quantity', // Kolom item order
-            'item_total' => 'Item Total', // Kolom item order
-            'item_color' => 'Item Color', // Kolom item order
-            // tambah kolom lain sesuai kebutuhan
+            'product_name' => 'Product Name',
+            'quantity' => 'Quantity',
+            'item_total' => 'Item Total',
+            'item_color' => 'Item Color',
         );
 
         // Status yang bisa dipilih
         $statuses = array('completed', 'processing', 'on-hold', 'canceled');
     ?>
-        <div class="wrap">
+        <div class="wrap export-orders-container">
             <h1>Export Orders</h1>
             <?php if (!$this->has_phpspreadsheet): ?>
                 <div class="notice notice-warning">
                     <p>Note: .xlsx requires PhpSpreadsheet (run composer in plugin folder to enable).</p>
                 </div>
             <?php endif; ?>
+
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                 <input type="hidden" name="action" value="wae_export_orders">
                 <?php wp_nonce_field('wae_export_nonce', 'wae_export_nonce_field'); ?>
                 <table class="form-table">
                     <tr>
-                        <th>Mapping Profile</th>
+                        <th><label for="profile">Mapping Profile</label></th>
                         <td>
-                            <select name="profile">
+                            <select name="profile" id="profile">
                                 <option value="">-- Default (all fields) --</option>
                                 <?php foreach ($profiles as $key => $p): ?>
                                     <option value="<?php echo esc_attr($key); ?>">
@@ -236,9 +535,9 @@ class WAE_Plugin
                         </td>
                     </tr>
                     <tr>
-                        <th>Status</th>
+                        <th><label for="order_status">Status</label></th>
                         <td>
-                            <select name="order_status[]" multiple>
+                            <select name="order_status[]" id="order_status" multiple>
                                 <?php foreach ($statuses as $status): ?>
                                     <option value="<?php echo esc_attr($status); ?>"><?php echo esc_html(ucfirst($status)); ?></option>
                                 <?php endforeach; ?>
@@ -250,14 +549,17 @@ class WAE_Plugin
                         <th>Columns (check to include)</th>
                         <td>
                             <?php foreach ($fields as $k => $label): ?>
-                                <label style="display:block"><input type="checkbox" name="columns[]" value="<?php echo esc_attr($k); ?>" checked> <?php echo esc_html($label); ?></label>
+                                <label style="display:block">
+                                    <input type="checkbox" name="columns[]" value="<?php echo esc_attr($k); ?>" checked>
+                                    <?php echo esc_html($label); ?>
+                                </label>
                             <?php endforeach; ?>
                         </td>
                     </tr>
                     <tr>
-                        <th>Format</th>
+                        <th><label for="format">Format</label></th>
                         <td>
-                            <select name="format">
+                            <select name="format" id="format">
                                 <option value="csv">CSV</option>
                                 <option value="xls">XLS (HTML)</option>
                                 <option value="xlsx">XLSX <?php if (!$this->has_phpspreadsheet) echo '(requires composer)'; ?></option>
@@ -265,17 +567,88 @@ class WAE_Plugin
                         </td>
                     </tr>
                     <tr>
-                        <th>Delimiter (CSV)</th>
-                        <td><input type="text" name="delimiter" value="," maxlength="1" style="width:50px"></td>
+                        <th><label for="delimiter">Delimiter (CSV)</label></th>
+                        <td><input type="text" name="delimiter" id="delimiter" value="," maxlength="1"></td>
                     </tr>
                     <tr>
-                        <th>Batch size</th>
-                        <td><input type="number" name="batch" value="200" min="50" max="5000"></td>
+                        <th><label for="batch">Batch size</label></th>
+                        <td><input type="number" name="batch" id="batch" value="200" min="50" max="5000"></td>
                     </tr>
                 </table>
-                <?php submit_button('Export Orders'); ?>
+                <?php submit_button('Export Orders', 'primary', 'submit', true); ?>
             </form>
         </div>
+
+        <style>
+            .export-orders-container {
+                margin: 20px 0;
+            }
+
+            .export-orders-container h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .notice {
+                background-color: #fff3cd;
+                border-color: #ffeeba;
+                color: #856404;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+
+            .form-table {
+                width: 100%;
+                margin-bottom: 20px;
+                border-collapse: collapse;
+            }
+
+            .form-table th {
+                text-align: left;
+                padding: 10px;
+                background-color: #f9f9f9;
+                border: 1px solid #ddd;
+            }
+
+            .form-table td {
+                padding: 10px;
+                border: 1px solid #ddd;
+            }
+
+            .form-table input[type="text"],
+            .form-table input[type="number"],
+            .form-table select {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+
+            .form-table input[type="text"]:focus,
+            .form-table input[type="number"]:focus,
+            .form-table select:focus {
+                border-color: #007cba;
+                outline: none;
+            }
+
+            .wae-button {
+                background-color: #007cba;
+                color: white;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                text-decoration: none;
+                transition: background-color 0.3s;
+            }
+
+            .wae-button:hover {
+                background-color: #005a8c;
+                color: #fff;
+            }
+        </style>
     <?php
     }
 
@@ -283,16 +656,15 @@ class WAE_Plugin
     {
         if (!current_user_can('manage_woocommerce')) wp_die('No.');
 
-        // Default kolom untuk user export (bisa kamu sesuaikan)
+        // Default kolom untuk user export
         $fields = array(
-            'ID' => 'User ID',
-            'user_login' => 'User Login',
-            'user_email' => 'User Email',
+            'ID' => 'User  ID',
+            'user_login' => 'User  Login',
+            'user_email' => 'User  Email',
             'user_registered' => 'Registered Date',
             'first_name' => 'First Name',
             'last_name' => 'Last Name',
-            'role' => 'User Role',
-            // tambah kolom lain sesuai kebutuhan
+            'role' => 'User  Role',
         );
 
         // Ambil semua mapping profile
@@ -303,25 +675,52 @@ class WAE_Plugin
             return isset($p['type']) && $p['type'] === 'users';
         });
 
+        // Ambil semua pengguna
+        $all_users = get_users(array('fields' => 'all'));
+
+        // Hitung jumlah pengguna berdasarkan peran
+        $role_counts = array();
+        foreach ($all_users as $user) {
+            foreach ($user->roles as $role) {
+                if (!isset($role_counts[$role])) {
+                    $role_counts[$role] = 0;
+                }
+                $role_counts[$role]++;
+            }
+        }
     ?>
-        <div class="wrap">
+        <div class="wrap export-users-container">
             <h1>Export Users</h1>
             <?php if (!$this->has_phpspreadsheet): ?>
                 <div class="notice notice-warning">
                     <p>Note: .xlsx requires PhpSpreadsheet (run composer in plugin folder to enable).</p>
                 </div>
             <?php endif; ?>
+
+            <!-- Tampilkan statistik pengguna -->
+            <h2>User Analytics</h2>
+            <table class="form-table">
+                <tr>
+                    <th>User Role</th>
+                    <th>Count</th>
+                </tr>
+                <?php foreach ($role_counts as $role => $count): ?>
+                    <tr>
+                        <td><?php echo esc_html(ucfirst($role)); ?></td>
+                        <td><?php echo esc_html($count); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                 <input type="hidden" name="action" value="wae_export_users">
                 <?php wp_nonce_field('wae_export_nonce', 'wae_export_nonce_field'); ?>
 
                 <table class="form-table">
-
-                    <!-- Mapping Profile Select -->
                     <tr>
-                        <th>Mapping Profile</th>
+                        <th><label for="profile">Mapping Profile</label></th>
                         <td>
-                            <select name="profile">
+                            <select name="profile" id="profile">
                                 <option value="">-- Default (all fields) --</option>
                                 <?php foreach ($profiles as $key => $p): ?>
                                     <option value="<?php echo esc_attr($key); ?>">
@@ -331,21 +730,21 @@ class WAE_Plugin
                             </select>
                         </td>
                     </tr>
-
-                    <!-- Columns (checkbox) -->
                     <tr>
                         <th>Columns (check to include)</th>
                         <td>
                             <?php foreach ($fields as $k => $label): ?>
-                                <label style="display:block"><input type="checkbox" name="columns[]" value="<?php echo esc_attr($k); ?>" checked> <?php echo esc_html($label); ?></label>
+                                <label style="display:block">
+                                    <input type="checkbox" name="columns[]" value="<?php echo esc_attr($k); ?>" checked>
+                                    <?php echo esc_html($label); ?>
+                                </label>
                             <?php endforeach; ?>
                         </td>
                     </tr>
-
                     <tr>
-                        <th>Format</th>
+                        <th><label for="format">Format</label></th>
                         <td>
-                            <select name="format">
+                            <select name="format" id="format">
                                 <option value="csv">CSV</option>
                                 <option value="xls">XLS (HTML)</option>
                                 <option value="xlsx">XLSX <?php if (!$this->has_phpspreadsheet) echo '(requires composer)'; ?></option>
@@ -353,25 +752,99 @@ class WAE_Plugin
                         </td>
                     </tr>
                     <tr>
-                        <th>Delimiter (CSV)</th>
-                        <td><input type="text" name="delimiter" value="," maxlength="1" style="width:50px"></td>
+                        <th><label for="delimiter">Delimiter (CSV)</label></th>
+                        <td><input type="text" name="delimiter" id="delimiter" value="," maxlength="1" style="width:50px"></td>
                     </tr>
                     <tr>
-                        <th>Batch size</th>
-                        <td><input type="number" name="batch" value="200" min="50" max="5000"></td>
+                        <th><label for="batch">Batch size</label></th>
+                        <td><input type="number" name="batch" id="batch" value="200" min="50" max="5000"></td>
                     </tr>
                 </table>
-                <?php submit_button('Export Users'); ?>
+                <?php submit_button('Export Users', 'primary', 'submit', true); ?>
             </form>
         </div>
+
+        <style>
+            .export-users-container {
+                margin: 20px 0;
+            }
+
+            .export-users-container h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .notice {
+                background-color: #fff3cd;
+                border-color: #ffeeba;
+                color: #856404;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+
+            .form-table {
+                width: 100%;
+                margin-bottom: 20px;
+                border-collapse: collapse;
+            }
+
+            .form-table th {
+                text-align: left;
+                padding: 10px;
+                background-color: #f9f9f9;
+                border: 1px solid #ddd;
+            }
+
+            .form-table td {
+                padding: 10px;
+                border: 1px solid #ddd;
+            }
+
+            .form-table input[type="text"],
+            .form-table input[type="number"],
+            .form-table select {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+
+            .form-table input[type="text"]:focus,
+            .form-table input[type="number"]:focus,
+            .form-table select:focus {
+                border-color: #007cba;
+                outline: none;
+            }
+
+            .wae-button {
+                background-color: #007cba;
+                color: white;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                text-decoration: none;
+                transition: background-color 0.3s;
+            }
+
+            .wae-button:hover {
+                background-color: #005a8c;
+                color: #fff;
+            }
+        </style>
     <?php
     }
 
 
-
     public function page_mappings()
     {
-        if (!current_user_can('manage_woocommerce')) wp_die('No.');
+        // if (!current_user_can('manage_woocommerce')) wp_die('No.');
+        if (!current_user_can('manage_woocommerce')) {
+            wp_die('You do not have sufficient permissions to access this page.');
+        }
+
 
         $type = isset($_GET['type']) ? sanitize_text_field($_GET['type']) : 'products';
 
@@ -434,88 +907,153 @@ class WAE_Plugin
     ?>
         <div class="wrap">
             <h1>Mapping Profiles</h1>
-            <p>
-                <a href="<?php echo admin_url('admin.php?page=wae_mappings&type=products'); ?>">Products</a> |
-                <a href="<?php echo admin_url('admin.php?page=wae_mappings&type=orders'); ?>">Orders</a> |
-                <a href="<?php echo admin_url('admin.php?page=wae_mappings&type=users'); ?>">Users</a>
-            </p>
+            <div class="tabs">
+                <button class="tab-button <?php echo $type === 'products' ? 'active' : ''; ?>" onclick="changeTab('products')">Products</button>
+                <button class="tab-button <?php echo $type === 'orders' ? 'active' : ''; ?>" onclick="changeTab('orders')">Orders</button>
+                <button class="tab-button <?php echo $type === 'users' ? 'active' : ''; ?>" onclick="changeTab('users')">Users</button>
+            </div>
 
-            <h2>Existing Profiles for <?php echo ucfirst($type); ?></h2>
-            <?php
-            // Tampilkan hanya profiles untuk tipe ini, misal filter key profile dengan prefix $type
-            $filtered_profiles = [];
-            foreach ($profiles as $key => $p) {
-                if (strpos($key, $type . '_') === 0) {
-                    $filtered_profiles[$key] = $p;
+            <div class="tab-content">
+                <h2>Existing Profiles for <?php echo ucfirst($type); ?></h2>
+                <?php
+                // Tampilkan hanya profiles untuk tipe ini, misal filter key profile dengan prefix $type
+                $filtered_profiles = [];
+                foreach ($profiles as $key => $p) {
+                    if (strpos($key, $type . '_') === 0) {
+                        $filtered_profiles[$key] = $p;
+                    }
                 }
-            }
-            if (empty($filtered_profiles)) {
-                echo '<p>No profiles yet.</p>';
-            } else {
-            ?>
-                <table class="widefat">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Columns</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($filtered_profiles as $key => $p): ?>
+                if (empty($filtered_profiles)) {
+                    echo '<p>No profiles yet.</p>';
+                } else {
+                ?>
+                    <table class="widefat">
+                        <thead>
                             <tr>
-                                <td><?php echo esc_html($p['name']); ?></td>
-                                <td><?php echo esc_html(implode(', ', $p['columns'])); ?></td>
-                                <td>
-                                    <a href="<?php echo esc_url(add_query_arg(array('page' => 'wae_mappings', 'edit' => $key, 'type' => $type), admin_url('admin.php'))); ?>">Edit</a> |
-                                    <form style="display:inline" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                                        <?php wp_nonce_field('wae_delete_nonce', 'wae_delete_nonce_field'); ?>
-                                        <input type="hidden" name="action" value="wae_delete_profile">
-                                        <input type="hidden" name="key" value="<?php echo esc_attr($key); ?>">
-                                        <button class="button-link-delete" onclick="return confirm('Delete profile?')">Delete</button>
-                                    </form>
-                                </td>
+                                <th>Name</th>
+                                <th>Columns</th>
+                                <th>Actions</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php
-            }
-            ?>
-
-            <h2><?php echo isset($_GET['edit']) ? 'Edit' : 'Create'; ?> Profile for <?php echo ucfirst($type); ?></h2>
-            <?php
-            $editing = null;
-            if (isset($_GET['edit'])) {
-                $key = sanitize_text_field($_GET['edit']);
-                if (isset($profiles[$key])) $editing = $profiles[$key];
-            }
-            ?>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                <?php wp_nonce_field('wae_save_nonce', 'wae_save_nonce_field'); ?>
-                <input type="hidden" name="action" value="wae_save_profile">
-                <input type="hidden" name="type" value="<?php echo esc_attr($type); ?>">
-                <table class="form-table">
-                    <tr>
-                        <th>Profile Name</th>
-                        <td><input type="text" name="name" value="<?php echo esc_attr($editing['name'] ?? ''); ?>" required></td>
-                    </tr>
-                    <tr>
-                        <th>Columns (check to include)</th>
-                        <td>
-                            <?php foreach ($fields as $k => $label): ?>
-                                <label style="display:block">
-                                    <input type="checkbox" name="columns[]" value="<?php echo esc_attr($k); ?>"
-                                        <?php if ($editing && in_array($k, $editing['columns'])) echo 'checked'; ?>>
-                                    <?php echo esc_html($label); ?>
-                                </label>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($filtered_profiles as $key => $p): ?>
+                                <tr>
+                                    <td><?php echo esc_html($p['name']); ?></td>
+                                    <td><?php echo esc_html(implode(', ', $p['columns'])); ?></td>
+                                    <td>
+                                        <a href="<?php echo esc_url(add_query_arg(array('page' => 'wae_mappings', 'edit' => $key, 'type' => $type), admin_url('admin.php'))); ?>">Edit</a> |
+                                        <form style="display:inline" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                            <?php wp_nonce_field('wae_delete_nonce', 'wae_delete_nonce_field'); ?>
+                                            <input type="hidden" name="action" value="wae_delete_profile">
+                                            <input type="hidden" name="key" value="<?php echo esc_attr($key); ?>">
+                                            <button class="button-link-delete" onclick="return confirm('Delete profile?')">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
-                        </td>
-                    </tr>
-                </table>
-                <?php submit_button(isset($editing) ? 'Update Profile' : 'Create Profile'); ?>
-            </form>
+                        </tbody>
+                    </table>
+                <?php
+                }
+                ?>
+
+                <h2><?php echo isset($_GET['edit']) ? 'Edit' : 'Create'; ?> Profile for <?php echo ucfirst($type); ?></h2>
+                <?php
+                $editing = null;
+                if (isset($_GET['edit'])) {
+                    $key = sanitize_text_field($_GET['edit']);
+                    if (isset($profiles[$key])) $editing = $profiles[$key];
+                }
+                ?>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                    <?php wp_nonce_field('wae_save_nonce', 'wae_save_nonce_field'); ?>
+                    <input type="hidden" name="action" value="wae_save_profile">
+                    <input type="hidden" name="type" value="<?php echo esc_attr($type); ?>">
+                    <table class="form-table">
+                        <tr>
+                            <th>Profile Name</th>
+                            <td><input type="text" name="name" value="<?php echo esc_attr($editing['name'] ?? ''); ?>" required></td>
+                        </tr>
+                        <tr>
+                            <th>Columns (check to include)</th>
+                            <td>
+                                <?php foreach ($fields as $k => $label): ?>
+                                    <label style="display:block">
+                                        <input type="checkbox" name="columns[]" value="<?php echo esc_attr($k); ?>"
+                                            <?php if ($editing && in_array($k, $editing['columns'])) echo 'checked'; ?>>
+                                        <?php echo esc_html($label); ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </td>
+                        </tr>
+                    </table>
+                    <?php submit_button(isset($editing) ? 'Update Profile' : 'Create Profile'); ?>
+                </form>
+            </div>
         </div>
+
+        <style>
+            .tabs {
+                display: flex;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #007cba;
+            }
+
+            .tab-button {
+                background-color: transparent;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                font-size: 16px;
+                transition: background-color 0.3s, color 0.3s;
+            }
+
+            .tab-button:hover {
+                background-color: #f1f1f1;
+            }
+
+            .tab-button.active {
+                border-bottom: 2px solid #007cba;
+                color: #007cba;
+                font-weight: bold;
+            }
+
+            .tab-content {
+                padding: 15px;
+                border: 1px solid #007cba;
+                border-radius: 5px;
+                background-color: #fff;
+            }
+
+            .widefat {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .widefat th,
+            .widefat td {
+                padding: 10px;
+                border: 1px solid #ddd;
+            }
+
+            .widefat th {
+                background-color: #f9f9f9;
+            }
+
+            .button-link-delete {
+                color: red;
+                cursor: pointer;
+                background: none;
+                border: none;
+                text-decoration: underline;
+            }
+        </style>
+
+        <script>
+            function changeTab(type) {
+                window.location.href = "<?php echo admin_url('admin.php?page=wae_mappings&type='); ?>" + type;
+            }
+        </script>
 <?php
     }
 

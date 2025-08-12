@@ -1,28 +1,36 @@
-# WooCommerce Advanced Export
+# WooCommerce Export Import Plus
 
-Plugin WordPress untuk melakukan export produk WooCommerce dengan fitur:
-- Export meta kustom
-- Export variasi produk
-- Export atribut terpisah
-- Mapping profile yang dapat disimpan & digunakan kembali
-- Editable mapping via form di wp-admin
-- Menu khusus di admin (bukan di Tools)
+## Deskripsi
+Plugin ini memungkinkan Anda untuk mengekspor dan mengimpor produk WooCommerce dengan lengkap, termasuk meta kustom, variasi produk, dan atribut terpisah. Selain itu, plugin ini juga menyediakan fitur Mapping Profile untuk memudahkan pengaturan kolom yang akan diekspor atau diimpor.
 
-## 📦 Instalasi
-1. Upload folder `woocommerce-advanced-export` ke direktori `/wp-content/plugins/`.
-2. Jalankan `composer install` di dalam folder plugin untuk mengunduh dependency (`PhpSpreadsheet`).
-3. Aktifkan plugin melalui menu **Plugins** di WordPress.
-4. Buka menu **WooCommerce → Advanced Export** untuk mulai menggunakan.
+## Fitur
+- Ekspor produk dengan opsi untuk memilih kolom yang ingin diekspor.
+- Impor produk dari file CSV, XLS, atau XLSX.
+- Ekspor dan impor pesanan dan pengguna.
+- Mapping Profile untuk menyimpan pengaturan kolom yang sering digunakan.
+- Dukungan untuk PhpSpreadsheet untuk format XLSX.
+- Antarmuka pengguna yang intuitif di dalam dashboard WordPress.
 
-## 🛠 Requirement
-- PHP >= 7.4
-- WordPress >= 5.8
-- WooCommerce >= 5.0
+## Instalasi
+1. Unduh plugin ini.
+2. Unggah folder plugin ke direktori `/wp-content/plugins/`.
+3. Aktifkan plugin melalui menu 'Plugins' di WordPress.
+4. Pastikan untuk menginstal PhpSpreadsheet jika Anda ingin menggunakan format XLSX. Anda dapat melakukannya dengan menjalankan `composer install` di dalam folder plugin.
 
-## ✍️ Author
-Puji Ermanto `<pujiermanto@gmail.com>`  
-AKA **Dadang Sukamenak**  
-[Portfolio](https://pujiermanto-portfolio.vercel.app)
+## Penggunaan
+1. Setelah plugin diaktifkan, Anda akan melihat menu baru bernama "Woo Advanced Export" di dashboard WordPress.
+2. Pilih jenis data yang ingin Anda ekspor atau impor (Produk, Pesanan, atau Pengguna).
+3. Untuk ekspor, pilih Mapping Profile jika ada, pilih format file, dan klik tombol "Export".
+4. Untuk impor, unggah file yang sesuai dan pilih formatnya, lalu klik tombol "Import".
 
-## 📄 Lisensi
-MIT License
+## Kontribusi
+Jika Anda ingin berkontribusi pada pengembangan plugin ini, silakan fork repositori ini dan kirim pull request.
+
+## Lisensi
+Plugin ini dilisensikan di bawah [GPLv2](http://www.gnu.org/licenses/gpl-2.0.html).
+
+## Kontak
+Untuk pertanyaan atau dukungan, silakan hubungi:
+- **Nama**: Puji Ermanto
+- **Email**: pujiermanto@gmail.com
+- **Website**: [Puji Ermanto Portfolio](https://pujiermanto-portfolio.vercel.app)

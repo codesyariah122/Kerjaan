@@ -24,7 +24,7 @@ class WAE_Exporter_Users
                             $row['ID'] = $user->ID;
                             break;
                         case 'user_login':
-                            $row['User Login'] = $user->user_login;
+                            $row['User  Login'] = $user->user_login;
                             break;
                         case 'user_email':
                             $row['Email'] = $user->user_email;
@@ -56,38 +56,186 @@ class WAE_Exporter_Users
     {
         $rows = iterator_to_array($rows_gen);
 
+        // Hitung jumlah pengguna berdasarkan peran
+        $role_counts = [];
+        foreach ($rows as $row) {
+            $roles = explode(', ', $row['Role']);
+            foreach ($roles as $role) {
+                if (!isset($role_counts[$role])) {
+                    $role_counts[$role] = 0;
+                }
+                $role_counts[$role]++;
+            }
+        }
+
+        // Siapkan data analitik
+        $role_counts = [];
+        $total_users = count($rows);
+        $total_days_since_registered = 0;
+        $registrations_per_month = [];
+        $email_domains = [];
+
+        foreach ($rows as $row) {
+            // Hitung role
+            $roles = explode(', ', $row['Role']);
+            foreach ($roles as $role) {
+                if (!isset($role_counts[$role])) {
+                    $role_counts[$role] = 0;
+                }
+                $role_counts[$role]++;
+            }
+
+            // Hitung umur akun (rata-rata)
+            if (!empty($row['Registered'])) {
+                $reg_date = new DateTime($row['Registered']);
+                $now = new DateTime();
+                $diff = $now->diff($reg_date)->days;
+                $total_days_since_registered += $diff;
+
+                // Hitung per bulan registrasi
+                $month_key = $reg_date->format('Y-m');
+                if (!isset($registrations_per_month[$month_key])) {
+                    $registrations_per_month[$month_key] = 0;
+                }
+                $registrations_per_month[$month_key]++;
+            }
+
+            // Hitung domain email
+            if (!empty($row['Email']) && strpos($row['Email'], '@') !== false) {
+                $domain = substr(strrchr($row['Email'], "@"), 1);
+                if (!isset($email_domains[$domain])) {
+                    $email_domains[$domain] = 0;
+                }
+                $email_domains[$domain]++;
+            }
+        }
+
+        // Rata-rata umur akun
+        $average_account_age = $total_users > 0 ? round($total_days_since_registered / $total_users, 1) : 0;
+
+        // Top 5 email domain
+        arsort($email_domains);
+        $top_email_domains = array_slice($email_domains, 0, 5, true);
+
+        // Siapkan data analitik
+        $analytics_data = [];
+        $analytics_data[] = ['Total Users', $total_users];
+        $analytics_data[] = ['Average Account Age (days)', $average_account_age];
+        $analytics_data[] = ['', '']; // pemisah
+
+        // Role analytics
+        $analytics_data[] = ['User Role', 'Count', 'Percentage'];
+        foreach ($role_counts as $role => $count) {
+            $percentage = round(($count / $total_users) * 100, 2) . '%';
+            $analytics_data[] = [$role, $count, $percentage];
+        }
+
+        $analytics_data[] = ['', '']; // pemisah
+
+        // Registrasi per bulan
+        $analytics_data[] = ['Registration Month', 'Count'];
+        ksort($registrations_per_month);
+        foreach ($registrations_per_month as $month => $count) {
+            $analytics_data[] = [$month, $count];
+        }
+
+        $analytics_data[] = ['', '']; // pemisah
+
+        // Top email domains
+        $analytics_data[] = ['Top Email Domains', 'Count'];
+        foreach ($top_email_domains as $domain => $count) {
+            $analytics_data[] = [$domain, $count];
+        }
+
+        $order_stats = [
+            'customer' => ['orders' => 0, 'total' => 0],
+            'mitra'    => ['orders' => 0, 'total' => 0],
+        ];
+
+        // Ambil semua order WooCommerce
+        if (class_exists('WC_Order_Query')) {
+            $query = new WC_Order_Query([
+                'limit'        => -1,
+                'status'       => ['wc-completed', 'wc-processing'], // bisa ditambah sesuai kebutuhan
+                'return'       => 'ids',
+            ]);
+            $order_ids = $query->get_orders();
+
+            foreach ($order_ids as $order_id) {
+                $order = wc_get_order($order_id);
+                if ($order) {
+                    $customer_id = $order->get_customer_id();
+                    $order_total = $order->get_total();
+
+                    // Cek role user ini
+                    $user_info = get_userdata($customer_id);
+                    if ($user_info && !empty($user_info->roles)) {
+                        foreach ($user_info->roles as $role) {
+                            if ($role === 'customer') {
+                                $order_stats['customer']['orders']++;
+                                $order_stats['customer']['total'] += $order_total;
+                            } elseif ($role === 'mitra') {
+                                $order_stats['mitra']['orders']++;
+                                $order_stats['mitra']['total'] += $order_total;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Masukkan ke analytics_data
+        $analytics_data[] = ['', '']; // pemisah
+        $analytics_data[] = ['Order Analytics', 'Orders', 'Total Amount', 'Average per User'];
+        foreach ($order_stats as $role => $stats) {
+            $role_user_count = isset($role_counts[$role]) ? $role_counts[$role] : 0;
+            $avg_order = $role_user_count > 0 ? round($stats['orders'] / $role_user_count, 2) : 0;
+            $analytics_data[] = [
+                ucfirst($role),
+                $stats['orders'],
+                wc_price($stats['total']),
+                $avg_order
+            ];
+        }
+
         if ($format === 'csv') {
+            // CSV untuk data pengguna
             header('Content-Type: text/csv; charset=UTF-8');
             header('Content-Disposition: attachment; filename="' . $filename . '.csv"');
             echo "\xEF\xBB\xBF"; // UTF-8 BOM
             $out = fopen('php://output', 'w');
 
-            $first = true;
+            // Tulis data pengguna
+            fputcsv($out, array_keys($rows[0]), $delimiter);
             foreach ($rows as $row) {
-                if ($first) {
-                    fputcsv($out, array_keys($row), $delimiter);
-                    $first = false;
-                }
                 fputcsv($out, $row, $delimiter);
             }
             fclose($out);
             return;
         } elseif ($format === 'xls') {
+            // XLS untuk data pengguna
             header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
             header('Content-Disposition: attachment; filename="' . $filename . '.xls"');
             echo "<table border=1>";
-            $first = true;
+            echo '<tr>';
+            foreach (array_keys($rows[0]) as $h) {
+                echo '<th>' . esc_html($h) . '</th>';
+            }
+            echo '</tr>';
             foreach ($rows as $row) {
-                if ($first) {
-                    echo '<tr>';
-                    foreach (array_keys($row) as $h) {
-                        echo '<th>' . esc_html($h) . '</th>';
-                    }
-                    echo '</tr>';
-                    $first = false;
-                }
                 echo '<tr>';
                 foreach ($row as $c) {
+                    echo '<td>' . esc_html($c) . '</td>';
+                }
+                echo '</tr>';
+            }
+            echo "</table>";
+
+            // Tambahkan analitik di sheet baru
+            echo "<br><h2>User Role Analytics</h2><table border=1>";
+            foreach ($analytics_data as $analytics_row) {
+                echo '<tr>';
+                foreach ($analytics_row as $c) {
                     echo '<td>' . esc_html($c) . '</td>';
                 }
                 echo '</tr>';
@@ -97,7 +245,10 @@ class WAE_Exporter_Users
         } elseif ($format === 'xlsx' && $has_phpspreadsheet) {
             try {
                 $spread = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-                $sheet = $spread->getActiveSheet();
+                $userSheet = $spread->getActiveSheet();
+                $userSheet->setTitle('Users');
+
+                // Tulis data pengguna
                 $rowNum = 1;
                 $writtenHeader = false;
 
@@ -105,7 +256,7 @@ class WAE_Exporter_Users
                     if (!$writtenHeader) {
                         $col = 1;
                         foreach (array_keys($row) as $h) {
-                            $sheet->setCellValueByColumnAndRow($col, $rowNum, $h);
+                            $userSheet->setCellValueByColumnAndRow($col, $rowNum, $h);
                             $col++;
                         }
                         $rowNum++;
@@ -114,10 +265,25 @@ class WAE_Exporter_Users
 
                     $col = 1;
                     foreach ($row as $c) {
-                        $sheet->setCellValueByColumnAndRow($col, $rowNum, $c);
+                        $userSheet->setCellValueByColumnAndRow($col, $rowNum, $c);
                         $col++;
                     }
                     $rowNum++;
+                }
+
+                // Tambahkan sheet baru untuk analitik
+                $analyticsSheet = $spread->createSheet();
+                $analyticsSheet->setTitle('Analytics');
+
+                // Tulis data analitik
+                $analyticsRowNum = 1;
+                foreach ($analytics_data as $analytics_row) {
+                    $col = 1;
+                    foreach ($analytics_row as $c) {
+                        $analyticsSheet->setCellValueByColumnAndRow($col, $analyticsRowNum, $c);
+                        $col++;
+                    }
+                    $analyticsRowNum++;
                 }
 
                 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -133,18 +299,25 @@ class WAE_Exporter_Users
             header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
             header('Content-Disposition: attachment; filename="' . $filename . '.xls"');
             echo "<table border=1>";
-            $first = true;
+            echo '<tr>';
+            foreach (array_keys($rows[0]) as $h) {
+                echo '<th>' . esc_html($h) . '</th>';
+            }
+            echo '</tr>';
             foreach ($rows as $row) {
-                if ($first) {
-                    echo '<tr>';
-                    foreach (array_keys($row) as $h) {
-                        echo '<th>' . esc_html($h) . '</th>';
-                    }
-                    echo '</tr>';
-                    $first = false;
-                }
                 echo '<tr>';
                 foreach ($row as $c) {
+                    echo '<td>' . esc_html($c) . '</td>';
+                }
+                echo '</tr>';
+            }
+            echo "</table>";
+
+            // Tambahkan analitik di sheet baru
+            echo "<br><h2>User Role Analytics</h2><table border=1>";
+            foreach ($analytics_data as $analytics_row) {
+                echo '<tr>';
+                foreach ($analytics_row as $c) {
                     echo '<td>' . esc_html($c) . '</td>';
                 }
                 echo '</tr>';
