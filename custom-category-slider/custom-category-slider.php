@@ -150,8 +150,8 @@ function ccsp_enqueue_scripts()
             background-position: center;
             padding: 10px;
             border-radius: 50%;
-            width: 180px;
-            height: 180px;
+            width: 100px;
+            height: 100px;
             margin: 0 auto 10px;
             display: flex;
             align-items: center;
@@ -176,12 +176,12 @@ function ccsp_enqueue_scripts()
                 margin-left: -1rem;
             }
             .category-slider .category-item {
-                margin: 0 4px;
+                margin: 0 10px;
             }
             .category-slider .category-item .category-img {
-                width: 150px;
-                height: 150px;
-                padding: 15px;
+                width: 140px;
+                height: 140px;
+                padding: 10px;
             }
             .category-slider .category-item .category-img img {
                 height: 150px;
