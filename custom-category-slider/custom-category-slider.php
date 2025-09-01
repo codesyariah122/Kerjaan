@@ -254,6 +254,25 @@ function ccsp_enqueue_scripts()
                 font-size: 1.5rem;
             }
         }
+
+        /* Ukuran gambar lebih besar untuk desktop (laptop/PC) */
+            @media (min-width: 1025px) {
+                .category-slider .category-item .category-img {
+                    width: 180px;
+                    height: 180px;
+                    padding: 15px;
+                }
+
+                .category-slider .category-item .category-img img {
+                    height: 160px;
+                    width: 500px;
+                }
+
+                .category-slider .category-item-title {
+                    font-size: 1.2rem;
+                }
+            }
+
     ');
 
     // Slick init, nanti bisa dipanggil ulang via ajax
