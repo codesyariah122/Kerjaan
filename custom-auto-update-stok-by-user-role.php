@@ -457,12 +457,11 @@ add_action('wp_footer', function () {
 <?php
 });
 
-// diskon khusus Mitra
-/**
- * ======================================
- * 1. Tambah field Diskon Mitra di Product Data
- * ======================================
- */
+
+// Custom diskon Mitra
+// ============================
+// 1️⃣ Tambah field Diskon Mitra di Product Data
+// ============================
 add_action('woocommerce_product_options_general_product_data', function () {
     woocommerce_wp_text_input([
         'id'          => '_mitra_discount',
@@ -477,22 +476,18 @@ add_action('woocommerce_product_options_general_product_data', function () {
     ]);
 });
 
-/**
- * ======================================
- * 2. Save Field Diskon Mitra
- * ======================================
- */
+// ============================
+// 2️⃣ Simpan field Diskon Mitra
+// ============================
 add_action('woocommerce_admin_process_product_object', function ($product) {
     if (isset($_POST['_mitra_discount'])) {
         $product->update_meta_data('_mitra_discount', sanitize_text_field($_POST['_mitra_discount']));
     }
 });
 
-/**
- * ======================================
- * 3. Terapkan Harga Diskon untuk User Mitra
- * ======================================
- */
+// ============================
+// 3️⃣ Terapkan Harga Diskon untuk User Mitra
+// ============================
 function apply_mitra_price($price, $product)
 {
     if (!is_user_logged_in()) return $price;
@@ -500,7 +495,7 @@ function apply_mitra_price($price, $product)
     $user = wp_get_current_user();
     if (!in_array('mitra', (array) $user->roles)) return $price;
 
-    // 🔑 ambil diskon dari parent product kalau ini variation
+    // ambil diskon dari parent product kalau ini variation
     $parent_id = $product->is_type('variation') ? $product->get_parent_id() : $product->get_id();
     $discount  = (float) get_post_meta($parent_id, '_mitra_discount', true);
 
@@ -513,11 +508,36 @@ function apply_mitra_price($price, $product)
 }
 add_filter('woocommerce_product_get_price', 'apply_mitra_price', 10, 2);
 add_filter('woocommerce_product_variation_get_price', 'apply_mitra_price', 10, 2);
-
-/**
- * ======================================
- * 4. Juga update regular_price biar konsisten
- * ======================================
- */
 add_filter('woocommerce_product_get_regular_price', 'apply_mitra_price', 10, 2);
 add_filter('woocommerce_product_variation_get_regular_price', 'apply_mitra_price', 10, 2);
+
+// ============================
+// 4️⃣ Tambah tipe diskon baru di dropdown coupon
+// ============================
+add_filter('woocommerce_coupon_discount_types', function ($discount_types) {
+    $discount_types['mitra_discount'] = __('Diskon Mitra', 'woocommerce');
+    return $discount_types;
+});
+
+// ============================
+// 5️⃣ Override perhitungan coupon untuk tipe mitra_discount
+// ============================
+add_action('woocommerce_coupon_get_discount_amount', function ($discount, $discounting_amount, $cart_item, $single, $coupon) {
+    if ($coupon->get_discount_type() === 'mitra_discount') {
+        // Hanya untuk user role Mitra
+        if (!is_user_logged_in()) return 0;
+        $user = wp_get_current_user();
+        if (!in_array('mitra', (array) $user->roles)) return 0;
+
+        // Ambil diskon dari produk
+        $product = $cart_item['data'];
+        $parent_id = $product->is_type('variation') ? $product->get_parent_id() : $product->get_id();
+        $mitra_discount = (float) get_post_meta($parent_id, '_mitra_discount', true);
+        if ($mitra_discount <= 0) return 0;
+
+        // Hitung diskon berdasarkan harga item
+        $discount = ($mitra_discount / 100) * $discounting_amount;
+        return $discount;
+    }
+    return $discount;
+}, 10, 5);
