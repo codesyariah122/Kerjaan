@@ -13,44 +13,6 @@
 
 defined('ABSPATH') || exit;
 
-// ====== TAMBAH FIELD DI ADMIN PRODUK ======
-// add_action('woocommerce_product_options_general_product_data', 'woo_add_unit_converter_admin_field');
-// function woo_add_unit_converter_admin_field()
-// {
-//     echo '<div class="options_group">';
-
-//     woocommerce_wp_checkbox([
-//         'id' => '_enable_unit_converter',
-//         'label' => __('Aktifkan Satuan Yard?', 'woocommerce'),
-//         'description' => __('Tampilkan input satuan yard / kg di halaman produk ini.'),
-//     ]);
-
-//     woocommerce_wp_text_input([
-//         'id' => '_price_per_yard',
-//         'label' => __('Harga per Yard', 'woocommerce'),
-//         'type' => 'number',
-//         'desc_tip' => 'true',
-//         'description' => __('Masukkan harga per yard untuk produk ini.', 'woocommerce'),
-//         'custom_attributes' => [
-//             'step' => '0.01',
-//             'min' => '0'
-//         ]
-//     ]);
-
-//     echo '</div>';
-// }
-// ====== SIMPAN METADATA ADMIN PRODUK ======
-// add_action('woocommerce_process_product_meta', 'woo_save_unit_converter_admin_field');
-// function woo_save_unit_converter_admin_field($post_id)
-// {
-//     $enabled = isset($_POST['_enable_unit_converter']) ? 'yes' : 'no';
-//     update_post_meta($post_id, '_enable_unit_converter', $enabled);
-
-//     if (isset($_POST['_price_per_yard'])) {
-//         update_post_meta($post_id, '_price_per_yard', wc_clean($_POST['_price_per_yard']));
-//     }
-// }
-
 // Tambahkan field di admin product
 add_action('woocommerce_product_options_general_product_data', 'woo_add_unit_converter_admin_field');
 function woo_add_unit_converter_admin_field()
@@ -132,8 +94,6 @@ function woo_save_unit_converter_admin_field($post_id)
         update_post_meta($post_id, '_price_per_kg', wc_format_decimal($_POST['_price_per_kg']));
     }
 }
-
-
 
 
 // ====== TAMPILKAN INPUT DI HALAMAN PRODUK ======
@@ -335,9 +295,16 @@ function woo_add_beli_langsung_button()
     add_action('wp_footer', function () use ($site_name) {
 ?>
         <script>
+            // Fungsi ambil satuan yang dipilih
             function getSelectedUnit() {
                 const selected = document.querySelector('input[name="input_unit"]:checked');
-                return selected ? selected.value : 'meter';
+                return selected ? selected.value : 'yard';
+            }
+
+            // Fungsi ambil jumlah input (misalnya 3 yard)
+            function getSelectedQty() {
+                const inputSatuan = document.querySelector('input[name="input_satuan"]');
+                return inputSatuan ? parseFloat(inputSatuan.value) || 1 : 1;
             }
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -354,13 +321,27 @@ function woo_add_beli_langsung_button()
                 }
 
                 document.addEventListener('click', function(e) {
+                    if (e.target.closest('.single_add_to_cart_button')) {
+                        const unitInput = document.querySelector('input[name="unit_satuan"]:checked');
+                        const unit = unitInput ? parseFloat(unitInput.value) || 1 : 1;
+                        const qty = localStorage.getItem('yard_value') ? localStorage.getItem('yard_value') : 1;
+                        localStorage.setItem('yard_value', qty);
+                        localStorage.setItem('unit_value', unit);
+
+                        console.log("Add To Cart di click")
+                        console.log(unitInput);
+                        console.log(unit);
+                        console.log(qty);
+
+                    }
+                });
+
+                document.addEventListener('click', function(e) {
                     if (e.target.closest('.beli-langsung-wa')) {
                         e.preventDefault();
 
-                        const unitInput = document.querySelector('input[name="unit_satuan"]:checked');
-                        const unit = unitInput ? parseFloat(unitInput.value) || 1 : 1;
                         const unitSelected = getSelectedUnit();
-                        const qty = localStorage.getItem('yard_value') ? localStorage.getItem('yard_value') : 1;
+                        const qty = getSelectedQty();
 
                         const title = document.querySelector('h1.product_title')?.textContent.trim() || 'Produk';
                         const url = window.location.href;
@@ -373,13 +354,13 @@ function woo_add_beli_langsung_button()
                         let gambar = '-';
                         let warna = '-';
 
-                        // 1️⃣ Ambil dari swatch custom kalau ada
+                        // Ambil warna dari swatch custom (jika ada)
                         const selectedSwatch = document.querySelector('.st-swatch-preview li.selected .st-custom-attribute');
                         if (selectedSwatch) {
                             warna = selectedSwatch.getAttribute('data-name').trim();
                         }
 
-                        // 2️⃣ Kalau masih "-", coba ambil dari variation.attributes (fallback)
+                        // Fallback: dari attribute variation
                         if (warna === '-' && variation) {
                             for (const [key, value] of Object.entries(variation.attributes)) {
                                 if (key.includes('attribute_pa_warna') || key.includes('attribute_pa_d697')) {
@@ -391,29 +372,27 @@ function woo_add_beli_langsung_button()
 
                         if (variation) {
                             hargaRaw = variation.display_price || 0;
-
-                            // Ambil warna dari attributes
-                            const attrWarna = Object.values(variation.attributes).find(v => v.includes('warna'));
-                            if (attrWarna) {
-                                warna = attrWarna.replace(/-/g, ' ').toUpperCase();
-                            }
-
-                            // Ambil gambar dari object variation.image.src
-                            if (variation.image && variation.image.src) {
+                            if (variation.image?.src) {
                                 gambar = variation.image.src;
                             }
+                        } else {
+                            // fallback ke price default product jika non-variation
+                            const priceEl = document.querySelector('.woocommerce-Price-amount bdi');
+                            hargaRaw = priceEl ? parseFloat(priceEl.textContent.replace(/[^\d]/g, '')) || 0 : 0;
                         }
 
-                        const total = hargaRaw * unit;
+                        // Hitung total sesuai qty aktual
+                        const total = hargaRaw * qty;
+
                         const hargaFormat = new Intl.NumberFormat('id-ID').format(hargaRaw);
                         const totalFormat = new Intl.NumberFormat('id-ID').format(total);
 
-                        const pesan = `Halo Admin <?php echo $site_name; ?>, saya tertarik untuk membeli produk berikut:\n\n` +
+                        const pesan = `Halo Admin Damara Kain, saya tertarik untuk membeli produk berikut:\n\n` +
                             `📌 *Nama Produk:* ${title}\n` +
                             `📏 *Jumlah:* ${qty} ${unitSelected}\n` +
                             `🎨 *Warna:* ${warna}\n` +
                             `🖼️ *Gambar:* ${gambar}\n` +
-                            `💸 *Harga per ${unit} ${unitSelected}:* Rp${hargaFormat}\n` +
+                            `💸 *Harga per ${unitSelected}:* Rp${hargaFormat}\n` +
                             `💳 *Total Bayar:* Rp${totalFormat}\n\n` +
                             `🔗 *Link Produk:* ${url}\n\n` +
                             `Mohon konfirmasinya ya, terima kasih 🙏`;
@@ -421,10 +400,6 @@ function woo_add_beli_langsung_button()
                         const nomor = waBtn.getAttribute('data-wa');
                         const waLink = `https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`;
                         window.open(waLink, '_blank');
-                        setTimeout(() => {
-                            localStorage.removeItem('yard_value');
-                            document.querySelector('input[name="input_satuan"]').value = 1
-                        }, 500)
                     }
                 });
             });
@@ -433,7 +408,7 @@ function woo_add_beli_langsung_button()
     });
 }
 
-// Input yard
+// Input Satuan
 add_action('wp_enqueue_scripts', 'woo_register_yard_converter_styles');
 function woo_register_yard_converter_styles()
 {
@@ -613,27 +588,44 @@ function woo_converter_input_fields_conditional()
         <div class="woo-converter-fields">
             <div class="woo-unit-converter">
                 <div class="woo-flex-row">
-                    <?php if ($default_unit === 'yard' || $default_unit === ''): ?>
-                        <label style="display: flex; align-items: center; gap: 5px;">
+                    <?php
+                    $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
+
+                    // Jika enable_unit_converter = yes → tampilkan keduanya
+                    if ($enable_converter === 'yes'): ?>
+                        <label style="display: flex; align-items: center; gap: 5px; margin-right: 10px;">
                             <input type="radio" name="input_unit" value="yard" id="unit_yard" <?php checked($default_unit, 'yard'); ?>>
                             Yard
                         </label>
-                    <?php endif; ?>
-
-                    <?php if ($default_unit === 'kilogram' || $default_unit === ''): ?>
                         <label style="display: flex; align-items: center; gap: 5px;">
                             <input type="radio" name="input_unit" value="kg" id="unit_kg" <?php checked($default_unit, 'kilogram'); ?>>
                             Kilogram
                         </label>
-                    <?php endif; ?>
 
-                    <div class="woo-unit-box">
-                        <input type="number" step="0.01" min="0.1" id="input_satuan" name="input_satuan" value="1" />
+                        <?php else:
+                        // Kalau tidak, tampilkan hanya unit default
+                        if ($default_unit === 'yard' || $default_unit === ''): ?>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="radio" name="input_unit" value="yard" id="unit_yard" checked>
+                                Yard
+                            </label>
+                        <?php elseif ($default_unit === 'kilogram'): ?>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="radio" name="input_unit" value="kg" id="unit_kg" checked>
+                                Kilogram
+                            </label>
+                    <?php endif;
+                    endif;
+                    ?>
+
+                    <div class="woo-unit-box" style="display: flex; align-items: center;">
+                        <input type="number" step="0.01" min="0.1" id="input_satuan" name="input_satuan" value="1" style="width: 100px; text-align: right;" />
                         <div id="unit_label" style="background: #1e1f37; color: #fff; padding: 8px 12px;">
                             <?php echo ucfirst($default_unit === 'kilogram' ? 'Kg' : 'Yard'); ?>
                         </div>
                     </div>
                 </div>
+
                 <div class="woo-flex-row">
                     <small id="yard-max-alert" style="display: none; color: red; font-size: 12px;">Maksimal order 60 yard.</small>
                 </div>
@@ -649,6 +641,19 @@ function woo_converter_input_fields_conditional()
 
     </div>
 
+    <!-- CSS Fallback: Sembunyikan bagian total di .product-price-quantity jika JS gagal -->
+    <style>
+        .product-price-quantity .woocommerce-Price-amount:last-of-type {
+            display: none !important;
+            /* Hilangkan price total di akhir */
+        }
+
+        .product-price-quantity::after {
+            content: none !important;
+            /* Hilangkan × jika ada */
+        }
+    </style>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const meterInput = document.querySelector('#input_satuan');
@@ -660,13 +665,53 @@ function woo_converter_input_fields_conditional()
             const converterFields = document.querySelector('.woo-converter-fields');
             const productForm = document.querySelector('form.variations_form');
 
-            function convertToYard(meter) {
-                return meter / 0.9144;
+            const MIN_YARD = 60;
+            // const MAX_YARD = 60;
+            const MIN_KG = 20;
+
+            function debounce(fn, delay = 800) {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => fn(...args), delay);
+                };
             }
 
             function getSelectedUnit() {
                 const selected = document.querySelector('input[name="input_unit"]:checked');
                 return selected ? selected.value : 'meter';
+            }
+
+            function handleValidation() {
+                const alertBox = document.getElementById('yard-max-alert');
+                let value = parseFloat(meterInput.value);
+                if (isNaN(value)) return;
+
+                const unit = getSelectedUnit();
+                const minValue = unit === 'yard' ? MIN_YARD : MIN_KG; // 🧠 Tambahkan ini
+                alertBox.style.display = 'none';
+
+                if (value < minValue) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: `Minimal Order ${minValue} ${unit === 'yard' ? 'Yard' : 'Kg'}`,
+                        text: `Jumlah ${unit} yang Anda masukkan kurang dari ${minValue} ${unit}.`,
+                        confirmButtonColor: '#25D366',
+                    });
+                    alertBox.textContent = `Minimal order ${minValue} ${unit}.`;
+                    alertBox.style.display = 'block';
+                    meterInput.value = minValue;
+                }
+
+                updateQty();
+                updateProductPriceQuantity();
+                const variation = jQuery('form.variations_form').data('product_variations')
+                    ?.find(v => v.variation_id === parseInt(jQuery('input[name="variation_id"]').val()));
+                if (variation) updatePrice(variation);
+            }
+
+            function convertToYard(meter) {
+                return meter / 0.9144;
             }
 
             function updateQty() {
@@ -679,6 +724,43 @@ function woo_converter_input_fields_conditional()
                 } else {
                     qtyInput.value = Math.ceil(length);
                     unitLabel.textContent = 'Kg';
+                }
+            }
+
+            // FUNGSI BARU: Update tampilan .product-price-quantity (mirip cart)
+            function updateProductPriceQuantity() {
+                let productPriceQuantity = document.querySelector('.product-price-quantity');
+                if (!productPriceQuantity) return;
+
+                const length = parseFloat(meterInput.value) || 1;
+                const unit = getSelectedUnit();
+                const unitLabelText = unit === 'yard' ? 'Yard' : 'Kg';
+
+                const variation = jQuery('form.variations_form').data('product_variations')
+                    ?.find(v => v.variation_id === parseInt(jQuery('input[name="variation_id"]').val()));
+
+                let hargaPerUnit = 0;
+                if (variation && variation.display_price) {
+                    hargaPerUnit = variation.display_price;
+                } else {
+                    hargaPerUnit = parseFloat(priceDisplay.dataset[`price${unit.charAt(0).toUpperCase() + unit.slice(1)}`]) || 0;
+                }
+
+                const hargaPerUnitFormat = new Intl.NumberFormat('id-ID').format(hargaPerUnit);
+
+                // Hapus semua elemen .woocommerce-Price-amount yang lama
+                productPriceQuantity.querySelectorAll('.woocommerce-Price-amount.amount').forEach(el => el.remove());
+
+                // Buat elemen unit price baru
+                const unitPriceSpan = document.createElement('span');
+                unitPriceSpan.classList.add('woocommerce-Price-amount', 'amount');
+                unitPriceSpan.innerHTML = `<bdi><span class="woocommerce-Price-currencySymbol">Rp</span>${hargaPerUnitFormat}</bdi>`;
+
+                // Update HTML
+                const quantityDiv = productPriceQuantity.querySelector('.quantity');
+                if (quantityDiv) {
+                    quantityDiv.innerHTML = `${length} ${unitLabelText} × `;
+                    quantityDiv.appendChild(unitPriceSpan);
                 }
             }
 
@@ -739,49 +821,14 @@ function woo_converter_input_fields_conditional()
 
             // Event listeners
             // meterInput.addEventListener('input', updateQty);
-            meterInput.addEventListener('input', function() {
-                const maxYard = 60;
+            meterInput.addEventListener('blur', debounce(handleValidation, 80));
 
-                let value = parseFloat(meterInput.value);
-                if (isNaN(value)) return;
-
-                const unit = getSelectedUnit();
-                let qtyVal = value;
-
-                if (unit === 'yard' && qtyVal > maxYard) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Maksimal Order 60 Yard',
-                        text: 'Jumlah yard yang Anda masukkan melebihi batas maksimal (60 yard).',
-                        confirmButtonColor: '#25D366',
-                    });
-
-                    meterInput.value = maxYard;
-                    qtyVal = maxYard;
-                }
-
-                const alertBox = document.getElementById('yard-max-alert');
-                if (alertBox) {
-                    alertBox.style.display = qtyVal >= maxYard ? 'block' : 'none';
-                }
-
-                if (!isNaN(qtyVal)) {
-                    localStorage.setItem('yard_value', qtyVal);
-                }
-
-                const priceDisplay = document.getElementById('price-per-yard-display');
-                const pricePerYard = parseFloat(priceDisplay.dataset.priceYard) || 0;
-                const pricePerKg = parseFloat(priceDisplay.dataset.priceKg) || 0;
-
-                let pricePerUnit = unit === 'yard' ? pricePerYard : pricePerKg;
-
-                console.log(unit)
-
-                let totalPrice = pricePerUnit * qtyVal;
-
-                priceDisplay.textContent = `Harga total: Rp ${totalPrice.toLocaleString('id-ID')} (${qtyVal.toFixed(2)} ${unit === 'yard' ? 'Yard' : 'Kg'})`;
-
-                updateQty();
+            unitRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    unitLabel.textContent = radio.value === 'yard' ? 'Yard' : 'Kg';
+                    handleValidation();
+                    updateProductPriceQuantity(); // Tambah ini
+                });
             });
 
             meterInput.addEventListener('blur', function() {
@@ -792,6 +839,7 @@ function woo_converter_input_fields_conditional()
                 }
             });
 
+            // handleValidation();
 
             // unitRadios.forEach(radio => radio.addEventListener('change', updateQty));
             // unitRadios.forEach(radio => radio.addEventListener('change', () => {
@@ -819,6 +867,27 @@ function woo_converter_input_fields_conditional()
                 const variation = jQuery('form.variations_form').data('product_variations')
                     ?.find(v => v.variation_id === parseInt(jQuery('input[name="variation_id"]').val()));
                 if (variation) updatePrice(variation);
+
+                updateProductPriceQuantity(); // Tambah ini
+            });
+
+            function updateMinValue() {
+                const unit = getSelectedUnit();
+                const minValue = unit === 'yard' ? MIN_YARD : MIN_KG;
+                const label = unit === 'yard' ? 'Yard' : 'Kg';
+
+                meterInput.value = minValue;
+                unitLabel.textContent = label;
+            }
+
+            // Saat load pertama
+            updateMinValue();
+
+            meterInput.value = getSelectedUnit() === 'yard' ? MIN_YARD : MIN_KG;
+
+            // Saat radio unit diganti
+            document.querySelectorAll('input[name="input_unit"]').forEach((radio) => {
+                radio.addEventListener('change', updateMinValue);
             });
 
             updateQty();
@@ -836,11 +905,243 @@ function woo_converter_input_fields_conditional()
                     updatePrice(selected);
                 }
             });
-
         });
     </script>
 <?php
 }
+
+// Added variation data to cart item session
+// ===============================
+// 2️⃣ Simpan data unit + jumlah ke cart
+// ===============================
+add_filter('woocommerce_add_cart_item_data', function ($data, $product_id, $variation_id) {
+    if (!empty($_POST['input_satuan'])) {
+        $data['input_satuan'] = floatval($_POST['input_satuan']);
+    }
+    if (!empty($_POST['input_unit'])) {
+        $data['input_unit'] = sanitize_text_field($_POST['input_unit']);
+    }
+    return $data;
+}, 10, 3);
+
+add_filter('woocommerce_get_cart_item_from_session', function ($cart_item, $values) {
+    if (isset($values['input_satuan'])) $cart_item['input_satuan'] = $values['input_satuan'];
+    if (isset($values['input_unit'])) $cart_item['input_unit'] = $values['input_unit'];
+    return $cart_item;
+}, 10, 2);
+// ===============================
+// ✅ CSS inline untuk hilangkan efek <br> dan sejajarkan jumlah + harga
+// ===============================
+add_action('wp_head', function () {
+    echo '<style>
+        /* Hilangkan <br> tambahan di variation detail checkout */
+        .woocommerce-checkout-review-order .variation p br,
+        .woocommerce-order-details .variation p br,
+        .woocommerce table.shop_table .variation p br {
+            display: none !important;
+        }
+
+        /* Sejajarkan teks dan harga */
+        .woocommerce-checkout-review-order .variation p,
+        .woocommerce-order-details .variation p,
+        .custom-flex-item {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #444;
+            margin: 0;
+        }
+    </style>';
+});
+
+// ===============================
+// ✅ Tampilkan jumlah + base price sejajar di detail checkout
+// ===============================
+add_filter('woocommerce_get_item_data', function ($item_data, $cart_item) {
+    if (!empty($cart_item['input_satuan'])) {
+        $unit_value = floatval($cart_item['input_satuan']);
+        $unit_label = !empty($cart_item['input_unit']) ? ucfirst($cart_item['input_unit']) : 'Yard';
+        $base_price = floatval($cart_item['data']->get_regular_price());
+
+        // Output clean tanpa inline style
+        $custom_value = sprintf(
+            '<span class="custom-flex-item">
+                <span>%s %s</span>
+                <span style="opacity: 0.6;">×</span>
+                <span>%s</span>
+            </span>',
+            wc_clean($unit_value),
+            esc_html($unit_label),
+            wc_price($base_price)
+        );
+
+        $item_data[] = array(
+            'name'    => "Jumlah ($unit_label)",
+            'display' => $custom_value,
+        );
+    }
+    return $item_data;
+}, 10, 2);
+
+// ===============================
+// ✅ Bersihkan <br> otomatis (backup jika WooCommerce tetap inject <br>)
+// ===============================
+add_filter('woocommerce_display_item_meta', function ($html, $item, $args) {
+    return str_replace(array('<br>', '<br/>', '<br />'), '', $html);
+}, 10, 3);
+
+// ===============================
+// 4️⃣ Update tampilan mini cart langsung
+// ===============================
+add_filter('woocommerce_widget_cart_item_quantity', function ($quantity_html, $cart_item, $cart_item_key) {
+    if (!empty($cart_item['input_satuan']) && !empty($cart_item['input_unit'])) {
+        $satuan     = $cart_item['input_satuan'];
+        $unit       = ucfirst($cart_item['input_unit']);
+        $harga_awal = floatval($cart_item['data']->get_regular_price());
+        $total      = $harga_awal * $satuan;
+        // return sprintf('<strong>Total: ' . wc_price($total) . '</strong>');
+        return '';
+    }
+    return $quantity_html;
+}, 10, 3);
+
+// ===============================
+// 5️⃣ Refresh mini cart via AJAX
+// ===============================
+add_filter('woocommerce_add_to_cart_fragments', function ($fragments) {
+    ob_start();
+    woocommerce_mini_cart();
+    $fragments['div.widget_shopping_cart_content'] = ob_get_clean();
+    return $fragments;
+});
+
+// Override default cart quantity input dengan input_satuan
+add_filter('woocommerce_cart_item_quantity', function ($product_quantity, $cart_item, $cart_item_key) {
+    if (!empty($cart_item['input_satuan'])) {
+        $satuan = $cart_item['input_satuan'];
+        $unit   = !empty($cart_item['input_unit']) ? ucfirst($cart_item['input_unit']) : 'Yard';
+        $name   = "cart[{$cart_item_key}][qty]";
+        $id     = "quantity_{$cart_item_key}";
+        $product_quantity = sprintf(
+            '<input type="number" id="%s" class="input-text qty text" step="1" min="0" name="%s" value="%s" title="%s" size="4" inputmode="numeric" />',
+            esc_attr($id),
+            esc_attr($name),
+            esc_attr($satuan),
+            esc_attr__("Qty", "woocommerce")
+        );
+    }
+    return $product_quantity;
+}, 10, 3);
+
+// ===============================
+// 3️⃣ Override tampilan Quantity di halaman Cart
+// ===============================
+add_filter('woocommerce_cart_item_quantity', function ($product_quantity, $cart_item_key, $cart_item) {
+    if (!empty($cart_item['input_satuan'])) {
+        $unit_value = floatval($cart_item['input_satuan']);
+        $unit_label = !empty($cart_item['input_unit']) ? ucfirst($cart_item['input_unit']) : '';
+        $product_quantity = sprintf(
+            '<span class="custom-cart-qty">%s %s</span>',
+            wc_clean($unit_value),
+            esc_html($unit_label)
+        );
+    }
+    return $product_quantity;
+}, 20, 3);
+
+// ===============================
+// 4️⃣ Override subtotal di tabel Cart
+// ===============================
+add_filter('woocommerce_cart_item_subtotal', function ($subtotal, $cart_item, $cart_item_key) {
+    if (!empty($cart_item['input_satuan'])) {
+        $unit_value = floatval($cart_item['input_satuan']);
+        $price      = $cart_item['data']->get_price();
+        $total      = $price * $unit_value;
+        $subtotal   = wc_price($total);
+    }
+    return $subtotal;
+}, 20, 3);
+
+// ===============================
+// 5️⃣ Kalkulasi ulang harga di cart berdasarkan input_satuan
+// ===============================
+add_action('woocommerce_before_calculate_totals', function ($cart) {
+    if (is_admin() && !defined('DOING_AJAX')) return;
+    if (did_action('woocommerce_before_calculate_totals') >= 2) return;
+
+    foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
+        if (!empty($cart_item['input_satuan'])) {
+            $harga_awal = floatval($cart_item['data']->get_regular_price());
+            $jumlah     = floatval($cart_item['input_satuan']);
+            $harga_baru = $harga_awal * $jumlah;
+
+            // Set harga produk baru
+            $cart_item['data']->set_price($harga_baru);
+
+            // ✅ Update juga line_total agar checkout membaca nilai baru
+            $cart->cart_contents[$cart_item_key]['line_total']    = $harga_baru;
+            $cart->cart_contents[$cart_item_key]['line_subtotal'] = $harga_baru;
+
+            // (opsional) tambahkan log untuk verifikasi
+            error_log("UPDATE checkout item {$cart_item_key} => " . $harga_baru);
+        }
+    }
+});
+
+// ===============================
+// ✅ Checkout: tampilkan hanya jumlah (tanpa × harga) dan biarkan subtotal WooCommerce menampilkan total yang benar
+// ===============================
+add_filter('woocommerce_checkout_cart_item_quantity', function ($quantity_html, $cart_item, $cart_item_key) {
+    if (!empty($cart_item['input_satuan'])) {
+        $unit_value = floatval($cart_item['input_satuan']);
+        $unit_label = !empty($cart_item['input_unit']) ? ucfirst($cart_item['input_unit']) : '';
+        $base_price = floatval($cart_item['data']->get_regular_price());
+
+        // Hanya tampilkan (tidak merubah perhitungan)
+        $quantity_html = sprintf(
+            '<div class="custom-checkout-qty">%s %s × %s</div>',
+            esc_html($unit_value),
+            esc_html($unit_label),
+            wc_price($base_price)
+        );
+    }
+    return $quantity_html;
+}, 20, 3);
+
+add_action('wp_head', function () {
+    if (is_checkout()) {
+        echo '<style>
+            /* Sembunyikan wrapper × harga di checkout */
+            .woocommerce-checkout .product-price-quantity {
+                display: none !important;
+            }
+
+            .woocommerce-checkout .product-subtotal {
+                display: none !important;
+            }
+        </style>';
+    }
+});
+
+// ✅ Pastikan subtotal checkout tidak dikalikan ulang
+add_filter('woocommerce_cart_item_subtotal', function ($subtotal, $cart_item, $cart_item_key) {
+    if (!empty($cart_item['input_satuan'])) {
+        error_log('===== CART ITEM (CHECKOUT + CART) =====');
+        error_log(print_r($cart_item, true));
+
+        $base_price = floatval($cart_item['data']->get_regular_price());
+        $unit_value = floatval($cart_item['input_satuan']);
+        $subtotal   = wc_price($base_price * $unit_value);
+    }
+    return $subtotal;
+}, 20, 3);
+
+// ===============================
+// ✅ END
+// ===============================
+
 
 add_action('woocommerce_after_single_product', function () {
     global $product;
@@ -858,22 +1159,24 @@ add_action('woocommerce_after_single_product', function () {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.85);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 99999;
+            transition: opacity 0.4s ease;
         }
 
         /* Animasi spinner */
         .spinner {
-            border: 6px solid #f3f3f3;
-            border-top: 6px solid #25D366;
-            /* hijau WhatsApp */
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #6a6969ff;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 25px;
+            height: 25px;
             animation: spin 1s linear infinite;
+            margin-bottom: 15px;
         }
 
         @keyframes spin {
@@ -885,11 +1188,21 @@ add_action('woocommerce_after_single_product', function () {
                 transform: rotate(360deg);
             }
         }
+
+        /* Teks loading */
+        .loading-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+            text-align: center;
+        }
     </style>
 
     <!-- HTML overlay -->
     <div id="loadingOverlay">
         <div class="spinner"></div>
+        <div class="loading-text">Memuat data produk, harap tunggu...</div>
     </div>
 
     <script>
@@ -902,85 +1215,16 @@ add_action('woocommerce_after_single_product', function () {
                 quantityDiv.remove();
             }
 
-            // Hilangkan overlay setelah load
+            // Hilangkan overlay dengan efek fade out
             const overlay = document.getElementById('loadingOverlay');
             if (overlay) {
-                overlay.style.display = 'none';
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 400);
             }
         });
     </script>
 <?php
 });
-
-
-
-// Added variation
-add_filter('woocommerce_add_cart_item_data', function ($data, $product_id, $variation_id) {
-    if (!empty($_POST['input_satuan'])) {
-        $yard = floatval($_POST['input_satuan']);
-        if ($yard > 0) {
-            $data['input_satuan'] = $yard;
-        }
-    }
-
-    // Cari attribute warna apa pun secara dinamis
-    foreach ($_POST as $key => $value) {
-        if (strpos($key, 'attribute_pa_warna') !== false && !empty($value)) {
-            $data['variation_warna'] = sanitize_text_field($value);
-            break;
-        }
-    }
-
-    return $data;
-}, 10, 3);
-
-
-// add_action('woocommerce_variation_options', 'add_image_variation_field', 10, 3);
-// function add_image_variation_field($loop, $variation_data, $variation)
-// {
-//     // Ambil ID gambar yang sudah ada
-//     $image_id = get_post_meta($variation->ID, 'upload_image_id', true);
-
-//     // Tampilkan input untuk ID gambar
-//     woocommerce_wp_hidden_input([
-//         'id' => 'upload_image_id[' . $loop . ']',
-//         'value' => $image_id
-//     ]);
-
-//     // Tampilkan gambar jika ada
-//     if ($image_id) {
-//         echo wp_get_attachment_image($image_id, 'thumbnail');
-//     }
-// }
-
-// add_action('woocommerce_save_product_variation', 'save_image_variation_field', 10, 2);
-// function save_image_variation_field($variation_id, $i)
-// {
-//     if (isset($_POST['upload_image_id'][$i])) {
-//         $image_id = intval($_POST['upload_image_id'][$i]);
-//         update_post_meta($variation_id, 'upload_image_id', $image_id);
-//         error_log("Saved image ID: " . $image_id . " for variation ID: " . $variation_id);
-//     }
-// }
-
-// add_action('woocommerce_save_product_variation', 'save_image_variation_field', 10, 2);
-// function save_image_variation_field($variation_id, $i)
-// {
-//     if (isset($_POST['upload_image_id'])) {
-//         error_log("Upload image IDs: " . print_r($_POST['upload_image_id'], true));
-//         if (isset($_POST['upload_image_id'][$i])) {
-//             $image_id = intval($_POST['upload_image_id'][$i]);
-//             // Jika ID gambar adalah 0, coba ambil ID dari URL
-//             if ($image_id === 0) {
-//                 $image_url = $_POST['upload_image_id'][$i]; // Ambil URL gambar
-//                 $image_id = attachment_url_to_postid($image_url); // Dapatkan ID dari URL
-//             }
-//             update_post_meta($variation_id, 'upload_image_id', $image_id);
-//             error_log("Saved image ID: " . $image_id . " for variation ID: " . $variation_id);
-//         }
-//     }
-// }
-
 
 add_action('admin_footer', 'enqueue_image_uploader_script');
 function enqueue_image_uploader_script()
@@ -1020,8 +1264,6 @@ function save_image_variation_field($variation_id, $i)
         }
     }
 }
-
-
 
 add_filter('woocommerce_cart_item_display', function ($item_name, $cart_item, $cart_item_key) {
     if (isset($cart_item['variation_warna'])) {
@@ -1318,25 +1560,6 @@ function custom_hide_add_to_cart($purchasable, $product)
     return $purchasable;
 }
 
-// Menyembunyikan harga produk dan tombol pembelian
-// add_action('template_redirect', 'custom_conditionally_remove_add_to_cart_price');
-// function custom_conditionally_remove_add_to_cart_price()
-// {
-//     if (!is_product()) return;
-
-//     global $post;
-//     $product_id = $post->ID;
-
-//     if (get_post_meta($product_id, '_hide_product_price', true) === 'yes') {
-//         // Hapus elemen harga & tombol add to cart
-//         remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_price', 10);
-//         remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30);
-
-//         // Tambahkan tombol WhatsApp
-//         add_action('woocommerce_single_product_summary', 'add_call_to_us_button', 30);
-//     }
-// }
-
 
 // Menambahkan tombol Call To Us
 function add_call_to_us_button()
@@ -1508,8 +1731,6 @@ add_action('wp_footer', function () {
     }
 });
 
-
-
 add_action('wp_head', function () {
     if (!is_product()) return;
 
@@ -1554,62 +1775,118 @@ add_action('wp_head', function () {
     }
 });
 
-// Redirect setelah order sukses di halaman thank you, jika ada produk WA order
-add_action('woocommerce_thankyou', 'redirect_to_whatsapp_after_order');
-function redirect_to_whatsapp_after_order($order_id)
+// Redirect ke WhatsApp setelah order sukses (versi lengkap + open tab baru)
+// Simpan custom field dari cart ke order
+add_filter('woocommerce_add_cart_item_data', function ($cart_item_data, $product_id) {
+    $fields = ['input_satuan', 'input_unit', 'warna', 'gambar'];
+    foreach ($fields as $field) {
+        if (isset($_POST[$field])) {
+            $cart_item_data[$field] = sanitize_text_field($_POST[$field]);
+        }
+    }
+    return $cart_item_data;
+}, 10, 2);
+
+// Tambahkan meta ke order item
+add_action('woocommerce_checkout_create_order_line_item', function ($item, $cart_item_key, $values, $order) {
+    $fields = ['input_satuan', 'input_unit', 'warna', 'gambar'];
+    foreach ($fields as $field) {
+        if (!empty($values[$field])) {
+            $item->add_meta_data($field, $values[$field]);
+        }
+    }
+}, 10, 4);
+
+// Format quantity di halaman order
+add_filter('woocommerce_order_item_quantity_html', function ($qty_display, $item) {
+    if (is_admin() || defined('DOING_AJAX')) return $qty_display;
+
+    $input_satuan = $item->get_meta('input_satuan');
+    $input_unit   = $item->get_meta('input_unit');
+
+    if ($input_satuan && $input_unit) {
+        return sprintf(
+            '<span class="custom-order-qty">× %s %s</span>',
+            esc_html($input_satuan),
+            esc_html(ucfirst($input_unit))
+        );
+    }
+    return $qty_display;
+}, 10, 2);
+
+// Redirect ke WhatsApp setelah order sukses
+add_action('woocommerce_thankyou', 'redirect_to_whatsapp_after_order_complete', 10, 1);
+function redirect_to_whatsapp_after_order_complete($order_id)
 {
     if (!$order_id) return;
-
     $order = wc_get_order($order_id);
     if (!$order) return;
 
-    // Cek produk dengan ACF order_via_whatsapp = 'yes'
-    $has_whatsapp_order = false;
-    foreach ($order->get_items() as $item) {
-        $product_id = $item->get_product_id();
-        $whatsapp_field = get_field('order_via_whatsapp', $product_id);
-        if ($whatsapp_field && in_array('yes', (array) $whatsapp_field)) {
-            $has_whatsapp_order = true;
-            break;
-        }
-    }
-
-    if (!$has_whatsapp_order) return; // Jika tidak ada produk WA, skip
-
     $wa_number = get_whatsapp_number();
     if (!$wa_number) return;
+    $wa_number = preg_replace('/^0/', '62', $wa_number);
 
-    // Data pelanggan
-    $customer_name = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
-    $customer_phone = $order->get_billing_phone();
-    $customer_email = $order->get_billing_email();
-    $order_total = $order->get_formatted_order_total();
+    // Data customer
+    $customer_name    = trim($order->get_formatted_billing_full_name());
+    $customer_phone   = $order->get_billing_phone();
+    $customer_email   = $order->get_billing_email();
 
-    // List produk
-    $items_text = "";
+    // Alamat -> ubah <br> ke newline
+    $customer_address = wp_strip_all_tags($order->get_formatted_billing_address());
+    $customer_address = str_replace(['<br />', '<br>', '<br/>'], "\n", $customer_address);
+    $customer_address = trim($customer_address);
+
+    $order_total = wp_strip_all_tags($order->get_formatted_order_total());
+
+    // Produk
+    $items_text = '';
     foreach ($order->get_items() as $item) {
         $product_name = $item->get_name();
-        $qty = $item->get_quantity();
-        $items_text .= "- {$product_name} (Qty: {$qty})\n";
+        $product      = $item->get_product();
+
+        $input_satuan = $item->get_meta('input_satuan');
+        $input_unit   = $item->get_meta('input_unit');
+        $warna        = $item->get_meta('warna');
+        $gambar_url   = $item->get_meta('gambar');
+
+        $unit_label  = $input_unit ? ucfirst($input_unit) : 'Unit';
+        $unit_value  = $input_satuan ? floatval($input_satuan) : $item->get_quantity();
+        $base_price  = $product ? floatval($product->get_regular_price()) : 0;
+        $total_price = $base_price * $unit_value;
+
+        $base_price_formatted  = 'Rp' . number_format($base_price, 0, ',', '.');
+        $total_price_formatted = 'Rp' . number_format($total_price, 0, ',', '.');
+
+        $items_text .= "• *{$product_name}* (x{$unit_value} {$unit_label})\n";
+        if ($warna)      $items_text .= "  Warna: {$warna}\n";
+        if ($gambar_url) $items_text .= "  Gambar: {$gambar_url}\n";
+        $items_text .= "  Harga: {$base_price_formatted}\n";
+        $items_text .= "  Total: {$total_price_formatted}\n\n";
     }
 
-    // Buat pesan WA
-    $message = "Halo Admin,\n";
-    $message .= "Ada order baru dari website:\n\n";
+    // Susun pesan (tanpa convert ulang encoding)
+    $message  = "🛍️ *Pesanan Baru dari DamaraKain.com*\n\n";
+    $message .= "📤 *Data Pemesan*\n";
     $message .= "Nama: {$customer_name}\n";
     $message .= "Telepon: {$customer_phone}\n";
-    $message .= "Email: {$customer_email}\n";
-    $message .= "Order ID: #{$order_id}\n";
-    $message .= "Total: {$order_total}\n";
-    $message .= "Detail produk:\n{$items_text}\n";
-    $message .= "Mohon tindak lanjut ya. Terima kasih!";
+    $message .= "Email: {$customer_email}\n\n";
+    $message .= "📦 *Alamat Pengiriman*\n{$customer_address}\n\n";
+    $message .= "🧾 *Detail Pesanan (#{$order_id})*\n{$items_text}";
+    $message .= "💰 *Total Order:* {$order_total}\n\n";
+    $message .= "Mohon segera ditindaklanjuti ya 🙏";
 
-    // Redirect ke WA
-    $wa_link = "https://wa.me/" . preg_replace('/^0/', '62', $wa_number) . "?text=" . rawurlencode($message);
+    // Pastikan string bersih tanpa karakter kontrol
+    $message = preg_replace('/[^\P{C}\n]+/u', '', $message);
 
-    // Redirect hanya kalau bukan admin
+    // Encode untuk URL WhatsApp
+    $encoded_message = rawurlencode($message);
+
+    // Redirect otomatis ke WhatsApp
     if (!is_admin()) {
-        wp_safe_redirect($wa_link);
-        exit;
+        echo "<script>
+            setTimeout(function(){
+                window.open('https://wa.me/{$wa_number}?text={$encoded_message}', '_blank');
+            }, 1500);
+        </script>";
     }
 }

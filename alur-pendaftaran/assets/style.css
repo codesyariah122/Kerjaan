@@ -1,0 +1,113 @@
+:root {
+    --ppdb-teal: #0f8b8f;
+    --ppdb-orange: #f58634;
+}
+
+.ppdb-flow {
+    background: #e6eff2;
+    padding: 40px 20px;
+    border-radius: 8px;
+}
+
+.ppdb-headline {
+    font-family: Poppins, sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    color: var(--ppdb-orange);
+    text-shadow: 0 2px 0 #fff, 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 0;
+}
+
+.ppdb-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px 60px;
+}
+
+.ppdb-step {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Step kiri */
+.ppdb-step.left {
+    flex-direction: row;
+}
+
+/* Step kanan */
+.ppdb-step.right {
+    flex-direction: row-reverse;
+}
+
+/* Nomor step */
+.ppdb-number {
+    background: #fff;
+    color: var(--ppdb-teal);
+    font-weight: 700;
+    font-size: 16px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+    z-index: 2;
+}
+
+/* Bubble hijau */
+.ppdb-inner {
+    background: var(--ppdb-teal);
+    color: #fff;
+    border-radius: 40px;
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex: 1;
+    position: relative;
+}
+
+/* Icon oranye di ujung bubble */
+.ppdb-icon {
+    background: var(--ppdb-orange);
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+/* Teks */
+.ppdb-title-text {
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+.ppdb-desc {
+    font-size: 13px;
+    font-weight: 400;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+/* Responsive */
+@media(max-width: 768px) {
+    .ppdb-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .ppdb-step.right {
+        flex-direction: row;
+        /* semua jadi kiri di mobile */
+    }
+}
