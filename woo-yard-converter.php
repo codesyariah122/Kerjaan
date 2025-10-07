@@ -76,25 +76,29 @@ function woo_add_unit_converter_admin_field()
 }
 
 // Simpan data
+// Simpan data Unit Converter di produk
 add_action('woocommerce_process_product_meta', 'woo_save_unit_converter_admin_field');
 function woo_save_unit_converter_admin_field($post_id)
 {
-    $enable = isset($_POST['_enable_unit_converter']) ? 'yes' : 'no';
-    update_post_meta($post_id, '_enable_unit_converter', $enable);
+    // ✅ Checkbox: pakai standar WooCommerce (yes / no)
+    $enable_unit_converter = isset($_POST['_enable_unit_converter']) ? 'yes' : 'no';
+    update_post_meta($post_id, '_enable_unit_converter', $enable_unit_converter);
 
+    // ✅ Simpan pilihan satuan utama
     if (isset($_POST['_unit_type'])) {
         update_post_meta($post_id, '_unit_type', sanitize_text_field($_POST['_unit_type']));
     }
 
+    // ✅ Simpan harga per Yard
     if (isset($_POST['_price_per_yard'])) {
         update_post_meta($post_id, '_price_per_yard', wc_format_decimal($_POST['_price_per_yard']));
     }
 
+    // ✅ Simpan harga per Kilogram
     if (isset($_POST['_price_per_kg'])) {
         update_post_meta($post_id, '_price_per_kg', wc_format_decimal($_POST['_price_per_kg']));
     }
 }
-
 
 // ====== TAMPILKAN INPUT DI HALAMAN PRODUK ======
 add_action('wp_enqueue_scripts', 'woo_converter_inline_style');
@@ -102,7 +106,8 @@ function woo_converter_inline_style()
 {
     if (is_product()) {
         $product_id = get_queried_object_id();
-        if ($product_id && get_post_meta($product_id, '_enable_unit_converter', true) === 'yes') {
+        $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
+        if ($product_id && $enable_converter !== 'yes') {
             wp_register_style('woo-yard-converter-inline', false);
             wp_enqueue_style('woo-yard-converter-inline');
             wp_add_inline_style('woo-yard-converter-inline', '
@@ -171,7 +176,8 @@ function woo_add_custom_cart_button_style()
     if (!is_product()) return;
 
     $product_id = get_queried_object_id();
-    if (!$product_id || get_post_meta($product_id, '_enable_unit_converter', true) !== 'yes') return;
+    $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
+    if (!$product_id || $enable_converter === '') return;
 
     wp_register_style('woo-custom-buttons-style', false);
     wp_enqueue_style('woo-custom-buttons-style');
@@ -248,8 +254,10 @@ function woo_add_beli_langsung_button()
 {
     global $product;
     $product_id = $product->get_id();
-
-    if (get_post_meta($product_id, '_enable_unit_converter', true) !== 'yes') return;
+    $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
+    if ($enable_converter === '') {
+        return;
+    }
 
     $product_title = $product->get_title();
     $product_url   = get_permalink($product_id);
@@ -419,7 +427,8 @@ function woo_register_yard_converter_styles()
     }
 
     $product_id = get_queried_object_id();
-    if (! $product_id || get_post_meta($product_id, '_enable_unit_converter', true) !== 'yes') {
+    $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
+    if (! $product_id || $enable_converter === '') {
         return;
     }
 
@@ -511,6 +520,15 @@ function woo_register_yard_converter_styles()
             border: none;
         }
 
+        .woo-flex-row label {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            margin-right: 10px !important;
+            margin-bottom: 0 !important;
+            vertical-align: middle;
+        }
+
         .woo-unit-box {
             display: flex;
             align-items: center;
@@ -550,9 +568,18 @@ function woo_converter_input_fields_conditional()
 {
     global $product;
     $product_id = $product->get_id();
+    $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
 
-    if (get_post_meta($product_id, '_enable_unit_converter', true) !== 'yes') return;
+    if (! $product_id || $enable_converter === '') {
+        return;
+    }
+
     $default_unit = get_post_meta($product_id, '_unit_type', true) ?: 'yard';
+
+    if (empty($default_unit)) {
+        $default_unit = 'yard';
+    }
+
     $price_per_yard_meta = get_post_meta($product_id, '_price_per_yard', true);
     $price_per_kg_meta   = get_post_meta($product_id, '_price_per_kg', true);
     // Helper: normalisasi meta jadi float (ambil nilai numerik pertama jika array)
@@ -589,8 +616,6 @@ function woo_converter_input_fields_conditional()
             <div class="woo-unit-converter">
                 <div class="woo-flex-row">
                     <?php
-                    $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
-
                     // Jika enable_unit_converter = yes → tampilkan keduanya
                     if ($enable_converter === 'yes'): ?>
                         <label style="display: flex; align-items: center; gap: 5px; margin-right: 10px;">
@@ -604,14 +629,14 @@ function woo_converter_input_fields_conditional()
 
                         <?php else:
                         // Kalau tidak, tampilkan hanya unit default
-                        if ($default_unit === 'yard' || $default_unit === ''): ?>
-                            <label style="display: flex; align-items: center; gap: 5px;">
-                                <input type="radio" name="input_unit" value="yard" id="unit_yard" checked>
+                        if ($default_unit === 'yard'): ?>
+                            <label style="display:inline-flex; align-items:center; gap:5px; margin-right:10px; margin-bottom:0;">
+                                <input type="radio" name="input_unit" value="yard" id="unit_yard" <?php checked($default_unit, 'yard'); ?>>
                                 Yard
                             </label>
                         <?php elseif ($default_unit === 'kilogram'): ?>
-                            <label style="display: flex; align-items: center; gap: 5px;">
-                                <input type="radio" name="input_unit" value="kg" id="unit_kg" checked>
+                            <label style="display:inline-flex; align-items:center; gap:5px; margin-right:10px; margin-bottom:0;">
+                                <input type="radio" name="input_unit" value="kg" id="unit_kg" <?php checked($default_unit, 'kilogram'); ?>>
                                 Kilogram
                             </label>
                     <?php endif;
@@ -778,14 +803,14 @@ function woo_converter_input_fields_conditional()
                 if (priceElem) {
                     priceElem.innerHTML = `Rp ${Math.round(totalPrice).toLocaleString('id-ID')} (${length} ${unitLabelText})`;
 
-                    priceDisplay.textContent = 'Harga per ' + unitLabelText + ': Rp ' +
-                        Math.round(totalPrice).toLocaleString('id-ID') + ` / ${unitLabelText} (Bruto)`;
+                    priceDisplay.textContent = 'Total Harga ' + variation.display_price + 'x' + yardValue + `(${unitLabelText})` + ' = Rp ' +
+                        Math.round(totalPrice).toLocaleString('id-ID');
                 }
 
                 // Update harga per yard jika priceDisplay ada
                 if (priceDisplay) {
-                    priceDisplay.textContent = `Harga per ${unitLabelText}: Rp ` +
-                        Math.round(totalPrice).toLocaleString('id-ID') + ` / ${unitLabelText} (Bruto)`;
+                    priceDisplay.textContent = `Total Harga ${variation.display_price} x ${yardValue} (${unitLabelText}) =  Rp ` +
+                        Math.round(totalPrice).toLocaleString('id-ID');
                 } else {
                     const nomor_wa = '<?php echo esc_js($nomor_wa); ?>';
                     const product_title = '<?php echo esc_js($product->get_title()); ?>';
@@ -814,7 +839,7 @@ function woo_converter_input_fields_conditional()
 
                     const priceDisplay = document.querySelector('#price-per-yard-display');
                     if (priceDisplay) {
-                        priceDisplay.textContent = 'Harga per Yard: Rp ' + Math.round(variation.display_price).toLocaleString('id-ID') + '- / Yard (Bruto)';
+                        priceDisplay.textContent = 'Subtotal : Rp ' + Math.round(variation.display_price).toLocaleString('id-ID') + '- / Yard (Bruto)';
                     }
                 }, 100);
             };
@@ -1146,8 +1171,10 @@ add_filter('woocommerce_cart_item_subtotal', function ($subtotal, $cart_item, $c
 add_action('woocommerce_after_single_product', function () {
     global $product;
 
+    $product_id = $product->get_id();
+    $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
     // Pastikan $product valid dan unit converter aktif
-    if (!is_product() || !$product || get_post_meta($product->get_id(), '_enable_unit_converter', true) !== 'yes') {
+    if ($enable_converter === '') {
         return;
     }
 ?>
@@ -1159,7 +1186,7 @@ add_action('woocommerce_after_single_product', function () {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.8);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -1300,9 +1327,9 @@ function custom_variable_price_per_yard_display($price_html, $product)
     }
 
     $product_id = $product->get_id();
-
+    $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
     // Cek apakah konversi aktif
-    if (get_post_meta($product_id, '_enable_unit_converter', true) !== 'yes') {
+    if ($enable_converter !== 'yes') {
         return $price_html;
     }
 
@@ -1335,7 +1362,6 @@ function custom_variable_price_per_yard_display($price_html, $product)
         return '<p class="price">Harga per yard: ' . wc_price($min) . ' – ' . wc_price($max) . '</p>';
     }
 }
-
 
 // ====== TAMBAH FIELD HARGA PER YARD DI VARIASI PRODUK ======
 add_action('woocommerce_variation_options_pricing', 'woo_add_price_per_yard_variation_field', 10, 3);
@@ -1720,7 +1746,7 @@ add_action('wp_footer', function () {
         <script>
             jQuery(function($) {
                 // Sembunyikan harga dan tombol beli
-                $('.price, .woocommerce-variation-price, #price-per-yard-display').hide();
+                // $('.price, .woocommerce-variation-price, #price-per-yard-display').hide();
                 // Tampilkan input yard
                 $('.woo-converter-wrapper, .woo-converter-fields').show(); // Pastikan input yard ditampilkan
                 $('.single_add_to_cart_button, .button-buy-now, .beli-langsung-wa').hide();
@@ -1885,7 +1911,9 @@ function redirect_to_whatsapp_after_order_complete($order_id)
     if (!is_admin()) {
         echo "<script>
             setTimeout(function(){
-                window.open('https://wa.me/{$wa_number}?text={$encoded_message}', '_blank');
+                // window.open('https://wa.me/{$wa_number}?text={$encoded_message}', '_blank');
+                //  window.location.replace('https://wa.me/{$wa_number}?text={$encoded_message}');
+                window.location.href = 'https://wa.me/{$wa_number}?text={$encoded_message}';
             }, 1500);
         </script>";
     }
