@@ -709,14 +709,25 @@ function woo_converter_input_fields_conditional()
 
             function handleValidation() {
                 const alertBox = document.getElementById('yard-max-alert');
+                const addToCartBtn = document.querySelector('.single_add_to_cart_button');
                 let value = parseFloat(meterInput.value);
-                if (isNaN(value)) return;
+                if (isNaN(value)) {
+                    addToCartBtn.disabled = true; // kalau bukan angka, disable
+                    return;
+                }
 
                 const unit = getSelectedUnit();
-                const minValue = unit === 'yard' ? MIN_YARD : MIN_KG; // 🧠 Tambahkan ini
+                const minValue = unit === 'yard' ? MIN_YARD : MIN_KG;
                 alertBox.style.display = 'none';
+                addToCartBtn.disabled = false; // reset dulu (aktifkan)
+                addToCartBtn.style.opacity = '1'; // reset visual normal
+                let compareValue = value;
+                if (unit === 'yard') {
+                    // Kalau input asalnya meter, konversi ke yard
+                    compareValue = value / 0.9144;
+                }
 
-                if (value < minValue) {
+                if (compareValue + 0.001 < minValue) {
                     Swal.fire({
                         icon: 'warning',
                         title: `Minimal Order ${minValue} ${unit === 'yard' ? 'Yard' : 'Kg'}`,
@@ -726,14 +737,24 @@ function woo_converter_input_fields_conditional()
                     alertBox.textContent = `Minimal order ${minValue} ${unit}.`;
                     alertBox.style.display = 'block';
                     meterInput.value = minValue;
+
+                    // 🔴 Disable tombol Add To Cart
+                    addToCartBtn.disabled = true;
+                    addToCartBtn.style.opacity = '0.5'; // tampilkan efek “dimmed”
+                } else {
+                    // ✅ Valid — aktifkan tombol
+                    addToCartBtn.disabled = false;
+                    addToCartBtn.style.opacity = '1';
                 }
 
                 updateQty();
                 updateProductPriceQuantity();
+
                 const variation = jQuery('form.variations_form').data('product_variations')
                     ?.find(v => v.variation_id === parseInt(jQuery('input[name="variation_id"]').val()));
                 if (variation) updatePrice(variation);
             }
+
 
             function convertToYard(meter) {
                 return meter / 0.9144;
@@ -846,7 +867,8 @@ function woo_converter_input_fields_conditional()
 
             // Event listeners
             // meterInput.addEventListener('input', updateQty);
-            meterInput.addEventListener('blur', debounce(handleValidation, 80));
+            meterInput.addEventListener('input', debounce(handleValidation, 300));
+            // meterInput.addEventListener('blur', handleValidation);
 
             unitRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
@@ -1180,7 +1202,7 @@ add_action('woocommerce_after_single_product', function () {
 ?>
     <style>
         /* Overlay full screen */
-        #loadingOverlay {
+        /* #loadingOverlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -1193,10 +1215,10 @@ add_action('woocommerce_after_single_product', function () {
             align-items: center;
             z-index: 99999;
             transition: opacity 0.4s ease;
-        }
+        } */
 
         /* Animasi spinner */
-        .spinner {
+        /* .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #6a6969ff;
             border-radius: 50%;
@@ -1204,9 +1226,9 @@ add_action('woocommerce_after_single_product', function () {
             height: 25px;
             animation: spin 1s linear infinite;
             margin-bottom: 15px;
-        }
+        } */
 
-        @keyframes spin {
+        /* @keyframes spin {
             0% {
                 transform: rotate(0deg);
             }
@@ -1214,7 +1236,7 @@ add_action('woocommerce_after_single_product', function () {
             100% {
                 transform: rotate(360deg);
             }
-        }
+        } */
 
         /* Teks loading */
         .loading-text {
@@ -1227,10 +1249,10 @@ add_action('woocommerce_after_single_product', function () {
     </style>
 
     <!-- HTML overlay -->
-    <div id="loadingOverlay">
+    <!-- <div id="loadingOverlay">
         <div class="spinner"></div>
         <div class="loading-text">Memuat data produk, harap tunggu...</div>
-    </div>
+    </div> -->
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
