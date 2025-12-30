@@ -1,0 +1,198 @@
+/* === 🎬 Cinematic Video Player (Tutor LMS 3.x) === */
+.tutor-video-player-wrapper {
+    width: 100%;
+    max-width: 1080px;
+    margin: 60px auto 40px auto;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    background: #000;
+}
+
+.tutor-video-player {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* Video element (HTML5 / YouTube / Vimeo) */
+.tutor-video-player iframe,
+.tutor-video-player video,
+.tutor-video-player .plyr__video-wrapper video {
+    width: 100%;
+    height: 560px;
+    border: none;
+    border-radius: 0;
+    display: block;
+}
+
+/* Efek cinematic hover */
+.tutor-video-player-wrapper {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tutor-video-player-wrapper:hover {
+    transform: scale(1.01);
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.25);
+}
+
+/* Spasi konten di bawah video */
+.tutor-course-single-content,
+.tutor-single-page-top {
+    margin-top: 40px !important;
+}
+
+/* Tombol Mark Complete elegan */
+.tutor-topbar-mark-btn,
+.tutor-single-lesson-lead-info .tutor-btn {
+    background: linear-gradient(135deg, #ED2D56, #ff5c5c);
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 10px 20px;
+    box-shadow: 0 4px 8px rgba(237, 45, 86, 0.3);
+    transition: all 0.3s ease-in-out;
+    border: none;
+}
+
+.tutor-topbar-mark-btn:hover,
+.tutor-single-lesson-lead-info .tutor-btn:hover {
+    background: #fff;
+    color: #ED2D56 !important;
+    box-shadow: 0 6px 12px rgba(237, 45, 86, 0.3);
+}
+
+/* Header bar warna emas */
+.tutor-course-topic-single-header,
+.tutor-course-topbar,
+.tutor-topbar {
+    background: #C49A3E !important;
+    border-bottom: none !important;
+    color: #fff;
+}
+
+/* === 🍿 CINEMATIC PLAYER FIXED === */
+
+/* Overlay hitam transparan — letakkan di bawah player */
+.tpt-cinematic-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    z-index: 1;
+    /* ✅ lebih rendah daripada player */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.tpt-cinematic-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Pastikan video player tetap di atas overlay */
+.tutor-video-player-wrapper,
+.tutor-video-player {
+    position: relative;
+    z-index: 10;
+    /* ✅ di atas overlay */
+}
+
+/* Fade-in video effect */
+.tpt-fade-in {
+    opacity: 0;
+    transform: scale(0.98);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.tpt-visible .tpt-fade-in {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.tutor-video-player-wrapper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 70%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 9;
+}
+
+.tpt-cinematic-overlay.active+.tutor-video-player-wrapper::before {
+    opacity: 1;
+}
+
+/* === 🎞️ Center video saat cinema mode aktif === */
+body.tpt-cinema-active {
+    overflow: hidden;
+}
+
+body.tpt-cinema-active .tutor-video-player-wrapper {
+    position: fixed !important;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1.05);
+    z-index: 1001;
+    max-width: 90%;
+    width: 100%;
+    height: auto;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.7);
+    transition: all 0.6s ease;
+}
+
+body.tpt-cinema-active .tutor-video-player iframe {
+    height: calc(100vh * 0.65);
+}
+
+body.tpt-cinema-active .tutor-course-single-content,
+body.tpt-cinema-active .tutor-course-topic-single-footer,
+body.tpt-cinema-active .site-header,
+body.tpt-cinema-active .tutor-course-topic-single-header {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+body.tpt-cinema-active .tpt-toggle-cinema {
+    z-index: 2000;
+    position: relative;
+}
+
+.tpt-cinematic-overlay {
+    transition: opacity 0.5s ease, backdrop-filter 0.5s ease;
+}
+
+/* Hilangkan nempel ke header */
+body.single-lesson .site-header {
+    margin-bottom: 15px;
+}
+
+.tpt-lock-badge span {
+    pointer-events: none;
+}
+
+.tpt-lock-badge:hover span {
+    pointer-events: auto;
+}
+
+@keyframes tpt-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsif */
+@media (max-width: 768px) {
+
+    .tutor-video-player iframe,
+    .tutor-video-player video {
+        height: 320px;
+    }
+}

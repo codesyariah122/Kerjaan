@@ -1,0 +1,2466 @@
+document.addEventListener("DOMContentLoaded", () => {
+    const observer = new MutationObserver(() => {
+        const topicBlocks = document.querySelectorAll('.css-rxenkd');
+        if (!topicBlocks.length) return;
+
+        topicBlocks.forEach(block => {
+            const titleInput = block.querySelector('input[name="title"]');
+            if (!titleInput) return;
+
+            const topicId = titleInput.id;
+            if (!topicId) return;
+
+            if (block.querySelector('.tpt-topic-price')) return;
+
+            // buat input harga
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.placeholder = 'Harga per topic (Rp)';
+            input.className = 'tpt-topic-price';
+            input.style.marginTop = '8px';
+            input.style.width = '180px';
+            input.style.fontSize = '13px';
+            input.style.padding = '4px 8px';
+            input.style.border = '1px solid #ccc';
+            input.style.borderRadius = '6px';
+            input.style.display = 'block';
+
+            // ambil ID course dari URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const courseId = urlParams.get('course_id');
+            const topicTitle = titleInput.value;
+
+            // ✅ Ambil harga awal dari server
+            jQuery.post(TPT_Ajax.ajax_url, {
+                action: 'tpt_get_price',
+                topic_id: topicId,
+                title: topicTitle,
+                course_id: courseId,
+                nonce: TPT_Ajax.nonce
+            }, function (resp) {
+                if (resp.success && resp.data.price) {
+                    input.value = resp.data.price;
+                }
+            });
+
+            // ✅ Simpan harga saat diubah
+            input.addEventListener('change', () => {
+                const price = input.value;
+
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: 'tpt_save_price',
+                    topic_id: topicId,
+                    title: topicTitle,
+                    course_id: courseId,
+                    price: price,
+                    nonce: TPT_Ajax.nonce
+                }, function (resp) {
+                    if (resp.success) {
+                        console.log('💾 Saved topic price:', resp.data.topic_id, price);
+                        input.style.borderColor = '#4CAF50';
+                        setTimeout(() => (input.style.borderColor = '#ccc'), 1000);
+                    } else {
+                        console.error('❌ Gagal simpan harga:', resp);
+                        input.style.borderColor = '#f44336';
+                    }
+                });
+            });
+
+            titleInput.parentElement.appendChild(input);
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+
+
+
+ahh sudah ok untuk badge, tapi kenapa loadingnya nya gak hilang hilang ???
+    document.addEventListener("DOMContentLoaded", () => {
+        const renderTopicPrices = () => {
+            const topicWrappers = document.querySelectorAll('.css-1g2ghqr, .css-rxenkd');
+            if (!topicWrappers.length) return;
+
+            topicWrappers.forEach(block => {
+                // ambil title text (saat tidak edit)
+                const titleTextEl = block.querySelector('.css-1jlm4v3');
+                const topicTitle = titleTextEl ? titleTextEl.textContent.trim() : null;
+
+                // ambil input (saat edit)
+                const titleInput = block.querySelector('input[name="title"]');
+                const editableTitle = titleInput ? titleInput.value.trim() : topicTitle;
+
+                if (!editableTitle) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = urlParams.get('course_id');
+                if (!courseId) return;
+
+                // Dapatkan wrapper judul topic
+                const titleWrapper = block.querySelector('.css-11s3wkf');
+                if (!titleWrapper) return;
+
+                // 🔹 Tambahkan loading overlay kecil
+                let loader = titleWrapper.querySelector('.tpt-badge-loader');
+                if (!loader) {
+                    loader = document.createElement('span');
+                    loader.className = 'tpt-badge-loader';
+                    loader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                    loader.style.marginLeft = '10px';
+                    loader.style.color = '#999';
+                    loader.style.fontSize = '13px';
+                    titleWrapper.appendChild(loader);
+                }
+
+                // ✅ Ambil harga tersimpan dari server
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: 'tpt_get_price',
+                    title: editableTitle,
+                    course_id: courseId,
+                    nonce: TPT_Ajax.nonce
+                }, function (resp) {
+                    if (resp.success) {
+                        const price = parseInt(resp.data.price || 0);
+
+                        // Hapus loader setelah fetch selesai
+                        loader.remove();
+
+                        if (price > 0) {
+                            // ✅ tambahkan badge di judul topic (saat view mode)
+                            if (!titleWrapper.querySelector('.tpt-price-badge')) {
+                                const badge = document.createElement('span');
+                                badge.className = 'tpt-price-badge';
+                                badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                                badge.style.marginLeft = '12px';
+                                badge.style.background = '#ED2D56';
+                                badge.style.color = '#fff';
+                                badge.style.fontSize = '14px';
+                                badge.style.padding = '6px 18px';
+                                badge.style.borderRadius = '20px';
+                                badge.style.fontWeight = '600';
+                                badge.style.boxShadow = '0 2px 8px rgba(237,45,86,0.4)';
+                                badge.style.display = 'inline-flex';
+                                badge.style.alignItems = 'center';
+                                badge.style.justifyContent = 'center';
+                                badge.style.gap = '6px';
+                                badge.style.transition = 'all 0.25s ease';
+                                badge.style.minWidth = '110px';
+                                badge.style.whiteSpace = 'nowrap';
+                                badge.style.textAlign = 'center';
+                                badge.style.verticalAlign = 'middle';
+                                titleWrapper.appendChild(badge);
+                            }
+                        }
+                    } else {
+                        loader.remove();
+                    }
+                });
+
+                // ========================
+                // Bagian input harga (saat edit)
+                // ========================
+                if (titleInput && !block.querySelector('.tpt-topic-price')) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.placeholder = 'Harga per topic (Rp)';
+                    input.className = 'tpt-topic-price';
+                    input.style.marginTop = '8px';
+                    input.style.width = '200px';
+                    input.style.fontSize = '13px';
+                    input.style.padding = '6px 12px';
+                    input.style.border = '1px solid #ccc';
+                    input.style.borderRadius = '8px';
+                    input.style.display = 'block';
+                    input.style.transition = 'all 0.2s ease';
+                    titleInput.parentElement.appendChild(input);
+
+                    // isi nilai awal
+                    jQuery.post(TPT_Ajax.ajax_url, {
+                        action: 'tpt_get_price',
+                        title: editableTitle,
+                        course_id: courseId,
+                        nonce: TPT_Ajax.nonce
+                    }, function (resp) {
+                        if (resp.success && resp.data.price) input.value = resp.data.price;
+                    });
+
+                    // simpan saat diubah
+                    input.addEventListener('change', () => {
+                        const price = parseInt(input.value || 0);
+
+                        // Tambahkan efek loading di badge
+                        let badgeLoader = titleWrapper.querySelector('.tpt-badge-loader');
+                        if (!badgeLoader) {
+                            badgeLoader = document.createElement('span');
+                            badgeLoader.className = 'tpt-badge-loader';
+                            badgeLoader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                            badgeLoader.style.marginLeft = '10px';
+                            badgeLoader.style.color = '#999';
+                            badgeLoader.style.fontSize = '13px';
+                            titleWrapper.appendChild(badgeLoader);
+                        }
+
+                        jQuery.post(TPT_Ajax.ajax_url, {
+                            action: 'tpt_save_price',
+                            title: editableTitle,
+                            course_id: courseId,
+                            price: price,
+                            nonce: TPT_Ajax.nonce
+                        }, function (resp) {
+                            badgeLoader.remove();
+
+                            if (resp.success) {
+                                console.log('💾 Saved topic price:', resp.data.topic_id, price);
+                                input.style.borderColor = '#4CAF50';
+                                input.style.boxShadow = '0 0 6px rgba(76,175,80,0.5)';
+
+                                // update badge
+                                let badge = titleWrapper.querySelector('.tpt-price-badge');
+                                if (!badge) {
+                                    badge = document.createElement('span');
+                                    badge.className = 'tpt-price-badge';
+                                    titleWrapper.appendChild(badge);
+                                }
+                                badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                                badge.style.marginLeft = '12px';
+                                badge.style.background = '#ED2D56';
+                                badge.style.color = '#fff';
+                                badge.style.fontSize = '14px';
+                                badge.style.padding = '6px 18px';
+                                badge.style.borderRadius = '20px';
+                                badge.style.fontWeight = '600';
+                                badge.style.boxShadow = '0 2px 8px rgba(237,45,86,0.4)';
+                                badge.style.display = 'inline-flex';
+                                badge.style.alignItems = 'center';
+                                badge.style.justifyContent = 'center';
+                                badge.style.gap = '6px';
+                                badge.style.minWidth = '110px';
+                                badge.style.whiteSpace = 'nowrap';
+                                badge.style.textAlign = 'center';
+                                badge.style.verticalAlign = 'middle';
+
+                                setTimeout(() => {
+                                    input.style.borderColor = '#ccc';
+                                    input.style.boxShadow = 'none';
+                                }, 800);
+                            } else {
+                                input.style.borderColor = '#f44336';
+                                input.style.boxShadow = '0 0 6px rgba(244,67,54,0.5)';
+                                console.error('❌ Gagal simpan harga:', resp);
+                            }
+                        });
+                    });
+                }
+            });
+        };
+
+        // ✅ Observer agar badge langsung muncul tanpa klik edit
+        const observer = new MutationObserver(() => renderTopicPrices());
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        renderTopicPrices();
+    });
+
+tutor - paid - topic - addon - v2.php :
+<? php
+/*
+Plugin Name: Tutor Paid Topic Addon V2
+Description: Inject harga per topic langsung di Course Builder Tutor LMS 3.x+ (React SPA)
+Version: 2.1
+Author: Puji Ermanto
+*/
+
+if (!defined('ABSPATH')) exit;
+
+// =====================
+// 1️⃣ Load JS admin
+// =====================
+add_action('admin_enqueue_scripts', function ($hook) {
+    if (strpos($hook, 'create-course') !== false || strpos($hook, 'tutor-course') !== false) {
+        wp_enqueue_script(
+            'tpt-admin-js',
+            plugin_dir_url(__FILE__). 'assets/admin.js',
+            ['jquery'],
+            '2.1',
+            true
+        );
+        wp_enqueue_style(
+            'font-awesome',
+            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'
+        );
+        wp_localize_script('tpt-admin-js', 'TPT_Ajax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('tpt_nonce')
+        ]);
+    }
+});
+add_action('wp_ajax_tpt_save_price', function () {
+    check_ajax_referer('tpt_nonce', 'nonce');
+    if (!current_user_can('edit_posts')) wp_send_json_error('Unauthorized');
+
+    $title = sanitize_text_field($_POST['title']);
+    $course_id = intval($_POST['course_id']);
+    $price = intval($_POST['price']);
+
+    if (!$title || !$course_id) wp_send_json_error('Invalid data');
+
+    global $wpdb;
+    $posts_table = $wpdb -> prefix. 'posts'; // otomatis = wpsu_posts
+
+    // 1️⃣ Coba cari TOPIC (langsung anak dari course)
+    $topic_post_id = $wpdb -> get_var($wpdb -> prepare("
+        SELECT ID FROM $posts_table
+        WHERE post_title = % s
+        AND post_parent = % d
+        AND post_type IN('topics', 'topic')
+        LIMIT 1
+    ", $title, $course_id));
+
+    // 2️⃣ Kalau bukan topic, mungkin dia LESSON (anak dari topic)
+    if (!$topic_post_id) {
+        $topic_post_id = $wpdb -> get_var($wpdb -> prepare("
+            SELECT l.ID 
+            FROM $posts_table l
+            INNER JOIN $posts_table t ON t.ID = l.post_parent
+            WHERE l.post_title = % s
+            AND t.post_parent = % d
+            AND l.post_type IN('lesson')
+            LIMIT 1
+        ", $title, $course_id));
+    }
+
+    if ($topic_post_id) {
+        update_post_meta($topic_post_id, '_tpt_price', $price);
+        wp_send_json_success(['topic_id' => $topic_post_id, 'price' => $price]);
+    } else {
+        wp_send_json_error('Topic not found in DB');
+    }
+});
+
+add_action('wp_ajax_tpt_get_price', function () {
+    check_ajax_referer('tpt_nonce', 'nonce');
+
+    $title = sanitize_text_field($_POST['title']);
+    $course_id = intval($_POST['course_id']);
+
+    global $wpdb;
+    $posts_table = $wpdb -> prefix. 'posts'; // otomatis = wpsu_posts
+
+    // 1️⃣ Cari TOPIC
+    $topic_post_id = $wpdb -> get_var($wpdb -> prepare("
+        SELECT ID FROM $posts_table
+        WHERE post_title = % s
+        AND post_parent = % d
+        AND post_type IN('topics', 'topic')
+        LIMIT 1
+    ", $title, $course_id));
+
+    // 2️⃣ Kalau bukan topic, mungkin LESSON
+    if (!$topic_post_id) {
+        $topic_post_id = $wpdb -> get_var($wpdb -> prepare("
+            SELECT l.ID 
+            FROM $posts_table l
+            INNER JOIN $posts_table t ON t.ID = l.post_parent
+            WHERE l.post_title = % s
+            AND t.post_parent = % d
+            AND l.post_type IN('lesson')
+            LIMIT 1
+        ", $title, $course_id));
+    }
+
+    $price = $topic_post_id ? get_post_meta($topic_post_id, '_tpt_price', true) : 0;
+    wp_send_json_success(['price' => intval($price), 'topic_id' => intval($topic_post_id)]);
+});
+
+// =====================
+// 3️⃣ REST API Endpoint - Get all topic prices by course_id
+// =====================
+add_action('rest_api_init', function () {
+    register_rest_route('tpt/v1', '/get-topic-prices', [
+        'methods'  => 'GET',
+        'callback' => function (WP_REST_Request $request) {
+            $course_id = intval($request -> get_param('course_id'));
+            if (!$course_id) {
+                return new WP_REST_Response([
+                    'status_code' => 400,
+                    'message'     => 'Missing or invalid course_id',
+                ], 400);
+            }
+
+            global $wpdb;
+
+            // Ambil semua lesson/topic dari course ini
+            $topics = $wpdb -> get_results($wpdb -> prepare("
+                SELECT p.ID, p.post_title 
+                FROM { $wpdb-> posts} p
+                WHERE p.post_parent IN(
+                SELECT ID FROM { $wpdb-> posts} WHERE post_parent = % d
+)
+                AND p.post_type IN('lesson', 'topic')
+                AND p.post_status = 'publish'
+                ORDER BY p.menu_order ASC
+", $course_id));
+
+if (!$topics) {
+    return new WP_REST_Response([
+        'status_code' => 404,
+        'message'     => 'No topics found for this course',
+    ], 404);
+}
+
+$data = [];
+$prices = [];
+
+foreach($topics as $topic) {
+    $price = get_post_meta($topic -> ID, '_tpt_price', true);
+    $price = $price ? intval($price) : 0;
+
+    $data[] = [
+        'id'    => intval($topic -> ID),
+        'title' => $topic -> post_title,
+        'price' => $price,
+    ];
+
+    if ($price > 0) $prices[] = $price;
+}
+
+$price_min = $prices ? min($prices) : 0;
+$price_max = $prices ? max($prices) : 0;
+
+return new WP_REST_Response([
+    'status_code' => 200,
+    'message'     => 'Course contents fetched successfully',
+    'data'        => [
+        'course_id'  => $course_id,
+        'topics'     => $data,
+        'price_min'  => $price_min,
+        'price_max'  => $price_max,
+    ]
+], 200);
+        },
+    ]);
+});
+
+
+
+// ini backup tutor-paid-topic-addon-v2.php terbaru 24 No 2025 - 3:18AM
+<? php
+/*
+Plugin Name: Tutor Paid Topic Addon V2
+Description: Inject harga per topic langsung di Course Builder Tutor LMS 3.x+ (React SPA) dan otomatis buat WooCommerce Product
+Version: 2.2
+Author: Puji Ermanto
+*/
+
+if (!defined('ABSPATH')) exit;
+
+// =====================
+// 1️⃣ Load JS admin
+// =====================
+add_action('admin_enqueue_scripts', function ($hook) {
+    if (strpos($hook, 'create-course') !== false || strpos($hook, 'tutor-course') !== false) {
+        wp_enqueue_script(
+            'tpt-admin-js',
+            plugin_dir_url(__FILE__). 'assets/admin.js',
+            ['jquery'],
+            '2.2',
+            true
+        );
+        wp_enqueue_style(
+            'font-awesome',
+            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'
+        );
+        wp_localize_script('tpt-admin-js', 'TPT_Ajax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('tpt_nonce')
+        ]);
+    }
+});
+
+// =====================
+// 2️⃣ AJAX save price
+// =====================
+add_action('wp_ajax_tpt_save_price', function () {
+    check_ajax_referer('tpt_nonce', 'nonce');
+    if (!current_user_can('edit_posts')) wp_send_json_error('Unauthorized');
+
+    $title = sanitize_text_field($_POST['title']);
+    $course_id = intval($_POST['course_id']);
+    $price = intval($_POST['price']);
+
+    if (!$title || !$course_id) wp_send_json_error('Invalid data');
+
+    global $wpdb;
+    $posts_table = $wpdb -> prefix. 'posts';
+    $topic_post_id = null;
+    $attempts = 0;
+
+    // Tunggu sampai Tutor LMS selesai menulis ke DB
+    while (!$topic_post_id && $attempts < 3) {
+        $topic_post_id = $wpdb -> get_var($wpdb -> prepare("
+            SELECT ID FROM $posts_table
+            WHERE post_title = % s
+            AND post_parent = % d
+            AND post_type IN('topics', 'topic')
+            LIMIT 1
+        ", $title, $course_id));
+
+        if (!$topic_post_id) {
+            usleep(300000);
+            $attempts++;
+        }
+    }
+
+    if (!$topic_post_id) wp_send_json_error('Topic not found in DB');
+
+    // Update meta harga
+    update_post_meta($topic_post_id, '_tpt_price', $price);
+
+    wp_send_json_success([
+        'topic_id' => $topic_post_id,
+        'price'    => $price,
+    ]);
+});
+
+// =====================
+// 3️⃣ Hook: buat/update WC product setelah course disimpan
+// =====================
+add_action('tutor_course_after_save', function ($course_id, $request_data) {
+    $topics = tutor_utils() -> get_course_topics($course_id); // ambil semua topic ID
+
+    foreach($topics as $topic_id) {
+        $price = get_post_meta($topic_id, '_tpt_price', true);
+        if (!$price) continue;
+
+        $wc_id = get_post_meta($topic_id, '_tpt_wc_id', true);
+
+        if (!$wc_id) {
+            $title = get_the_title($topic_id);
+            if (!$title) continue; // skip kalau title kosong
+
+            $product = new WC_Product_Simple();
+            $product -> set_name($title);
+            $product -> set_regular_price($price);
+            $product -> set_catalog_visibility('hidden');
+            $product -> save();
+
+            update_post_meta($topic_id, '_tpt_wc_id', $product -> get_id());
+            update_post_meta($product -> get_id(), '_tpt_topic_id', $topic_id);
+        } else {
+            $product = wc_get_product($wc_id);
+            if ($product) $product -> set_regular_price($price) -> save();
+        }
+    }
+}, 10, 2);
+
+// =====================
+// 3️⃣ AJAX get price
+// =====================
+add_action('wp_ajax_tpt_get_price', function () {
+    check_ajax_referer('tpt_nonce', 'nonce');
+
+    $title = sanitize_text_field($_POST['title']);
+    $course_id = intval($_POST['course_id']);
+
+    global $wpdb;
+    $posts_table = $wpdb -> prefix. 'posts';
+
+    $topic_post_id = $wpdb -> get_var($wpdb -> prepare("
+        SELECT ID FROM $posts_table
+        WHERE post_title = % s
+        AND post_parent = % d
+        AND post_type IN('topics', 'topic')
+        LIMIT 1
+    ", $title, $course_id));
+
+    if (!$topic_post_id) {
+        $topic_post_id = $wpdb -> get_var($wpdb -> prepare("
+            SELECT l.ID
+            FROM $posts_table l
+            INNER JOIN $posts_table t ON t.ID = l.post_parent
+            WHERE l.post_title = % s
+            AND t.post_parent = % d
+            AND l.post_type = 'lesson'
+            LIMIT 1
+        ", $title, $course_id));
+    }
+
+    $price = $topic_post_id ? get_post_meta($topic_post_id, '_tpt_price', true) : 0;
+    wp_send_json_success([
+        'price'    => intval($price),
+        'topic_id' => intval($topic_post_id)
+    ]);
+});
+
+// =====================
+// 4️⃣ AJAX add to cart
+// =====================
+add_action('wp_ajax_tpt_add_to_cart', 'tpt_add_to_cart');
+add_action('wp_ajax_nopriv_tpt_add_to_cart', 'tpt_add_to_cart');
+function tpt_add_to_cart() {
+    $product_id = intval($_POST['product_id'] ?? 0);
+    if (!$product_id) wp_send_json_error('Invalid product');
+
+    if (WC() -> cart -> add_to_cart($product_id)) {
+        wp_send_json_success();
+    } else {
+        wp_send_json_error('Failed to add to cart');
+    }
+}
+
+// =====================
+// 5️⃣ Update completed topic saat order completed
+// =====================
+add_action('woocommerce_order_status_completed', function ($order_id) {
+    $order = wc_get_order($order_id);
+    $user_id = $order -> get_user_id();
+
+    foreach($order -> get_items() as $item) {
+        $topic_id = get_post_meta($item -> get_product_id(), '_tpt_topic_id', true);
+        if ($topic_id) {
+            $completed = get_user_meta($user_id, '_tpt_completed_topics', true) ?: [];
+            if (!in_array($topic_id, $completed)) {
+                $completed[] = $topic_id;
+                update_user_meta($user_id, '_tpt_completed_topics', $completed);
+            }
+        }
+    }
+});
+
+// =====================
+// 6️⃣ REST API: get all topic prices
+// =====================
+add_action('rest_api_init', function () {
+    register_rest_route('tpt/v1', '/get-topic-prices', [
+        'methods'  => 'GET',
+        'callback' => function (WP_REST_Request $request) {
+            $course_id = intval($request -> get_param('course_id'));
+            if (!$course_id) return new WP_REST_Response([
+                'status_code' => 400,
+                'message'     => 'Missing or invalid course_id',
+            ], 400);
+
+            global $wpdb;
+
+            $topics = $wpdb -> get_results($wpdb -> prepare("
+                SELECT p.ID, p.post_title
+                FROM { $wpdb-> posts} p
+                WHERE p.post_parent IN(
+                SELECT ID FROM { $wpdb-> posts} WHERE post_parent = % d
+)
+                AND p.post_type IN('lesson', 'topic')
+                AND p.post_status = 'publish'
+                ORDER BY p.menu_order ASC
+", $course_id));
+
+if (!$topics) return new WP_REST_Response([
+    'status_code' => 404,
+    'message'     => 'No topics found for this course',
+], 404);
+
+$data = [];
+$prices = [];
+foreach($topics as $topic) {
+    $price = intval(get_post_meta($topic -> ID, '_tpt_price', true) ?: 0);
+    $data[] = ['id' => intval($topic -> ID), 'title' => $topic -> post_title, 'price' => $price];
+    if ($price > 0) $prices[] = $price;
+}
+
+return new WP_REST_Response([
+    'status_code' => 200,
+    'message'     => 'Course contents fetched successfully',
+    'data'        => [
+        'course_id' => $course_id,
+        'topics'    => $data,
+        'price_min' => $prices ? min($prices) : 0,
+        'price_max' => $prices ? max($prices) : 0
+    ]
+], 200);
+        }
+    ]);
+});
+
+// =====================
+// 7️⃣ Frontend: inject Buy Topic button
+// =====================
+add_action('wp_footer', function () {
+    if (!is_singular('courses')) return;
+    $completed = get_user_meta(get_current_user_id(), '_tpt_completed_topics', true) ?: [];
+?>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const userCompleted = <?php echo json_encode($completed); ?>;
+
+            document.querySelectorAll('.tutor-accordion-item').forEach(item => {
+                const topicId = parseInt(item.dataset.topicId);
+                const wcId = parseInt(item.dataset.wcId);
+                if (!wcId || !topicId) return;
+
+                const prevTopicId = item.dataset.prevTopicId ? parseInt(item.dataset.prevTopicId) : 0;
+                const canBuy = !prevTopicId || userCompleted.includes(prevTopicId);
+
+                const btn = document.createElement('button');
+                btn.textContent = canBuy ? "Buy Topic" : "Selesaikan Bab sebelumnya";
+                btn.disabled = !canBuy;
+                btn.className = "tpt-btn-buy-topic";
+                Object.assign(btn.style, {
+                    marginTop: "8px",
+                    padding: "6px 18px",
+                    borderRadius: "6px",
+                    border: "none",
+                    cursor: canBuy ? "pointer" : "not-allowed",
+                    background: canBuy ? "#ED2D56" : "#ccc",
+                    color: "#fff",
+                    fontWeight: "600"
+                });
+
+                if (canBuy) {
+                    btn.addEventListener('click', () => {
+                        jQuery.post('<?php echo admin_url("admin-ajax.php"); ?>', {
+                            action: "tpt_add_to_cart",
+                            product_id: wcId
+                        }).done(() => {
+                            btn.textContent = "Added!";
+                            btn.disabled = true;
+                            btn.style.background = "#999";
+                        });
+                    });
+                }
+
+                item.querySelector('.tutor-course-content-list')?.appendChild(btn);
+            });
+        });
+    </script>
+<?php
+});
+
+
+// assets/admin.js : 
+document.addEventListener("DOMContentLoaded", () => {
+    let renderTimeout;
+
+    const tryInjectPriceInput = (block, attempt = 0) => {
+        if (attempt > 10) return;
+        const titleInput = block.querySelector('input[name="title"]');
+        if (titleInput && !block.querySelector(".tpt-topic-price")) {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.placeholder = "Harga per topic (Rp)";
+            input.className = "tpt-topic-price";
+            Object.assign(input.style, {
+                marginTop: "8px",
+                width: "200px",
+                fontSize: "13px",
+                padding: "6px 12px",
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+                display: "block",
+                transition: "all 0.2s ease",
+            });
+            titleInput.parentElement.appendChild(input);
+
+            // Simpan saat user input
+            input.addEventListener("change", () => {
+                const price = parseInt(input.value || 0);
+                if (isNaN(price)) return;
+
+                const titleWrapper = block.querySelector(".css-11s3wkf");
+                const saveLoader = document.createElement("span");
+                saveLoader.className = "tpt-badge-loader";
+                saveLoader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                Object.assign(saveLoader.style, {
+                    marginLeft: "10px",
+                    color: "#999",
+                    fontSize: "13px",
+                    opacity: "0.7",
+                });
+                titleWrapper.appendChild(saveLoader);
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = urlParams.get("course_id");
+                const editableTitle = titleInput.value.trim();
+
+                // Tunggu sampai topic punya ID di DB
+                const waitForTopicId = (attempt = 0) => {
+                    if (attempt > 20) { // max 20*300ms = 6 detik
+                        saveLoader.remove();
+                        input.style.borderColor = "#f44336";
+                        input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                        return;
+                    }
+                    jQuery.post(TPT_Ajax.ajax_url, {
+                        action: "tpt_get_price",
+                        title: editableTitle,
+                        course_id: courseId,
+                        nonce: TPT_Ajax.nonce,
+                    }).done((resp) => {
+                        const topicId = resp.data?.topic_id || 0;
+                        if (topicId > 0) {
+                            // Save harga
+                            jQuery.post(TPT_Ajax.ajax_url, {
+                                action: "tpt_save_price",
+                                title: editableTitle,
+                                course_id: courseId,
+                                price: price,
+                                nonce: TPT_Ajax.nonce,
+                            }, function (resp2) {
+                                saveLoader.remove();
+                                titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                                if (resp2.success) {
+                                    const badge = document.createElement("span");
+                                    badge.className = "tpt-price-badge";
+                                    badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                                    Object.assign(badge.style, {
+                                        marginLeft: "12px",
+                                        background: "#ED2D56",
+                                        color: "#fff",
+                                        fontSize: "14px",
+                                        padding: "6px 18px",
+                                        borderRadius: "20px",
+                                        fontWeight: "600",
+                                        boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: "6px",
+                                        minWidth: "150px",
+                                    });
+                                    titleWrapper.appendChild(badge);
+                                } else {
+                                    input.style.borderColor = "#f44336";
+                                    input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                                }
+                            });
+                        } else {
+                            setTimeout(() => waitForTopicId(attempt + 1), 300);
+                        }
+                    });
+                };
+                waitForTopicId();
+            });
+        } else if (!titleInput) {
+            setTimeout(() => tryInjectPriceInput(block, attempt + 1), 300);
+        }
+    };
+
+    const renderTopicPrices = () => {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            const topicWrappers = document.querySelectorAll(".css-1g2ghqr, .css-rxenkd");
+            if (!topicWrappers.length) return;
+
+            topicWrappers.forEach((block) => {
+                const titleInput = block.querySelector('input[name="title"]');
+                const titleTextEl = block.querySelector(".css-1jlm4v3");
+                const topicTitle = titleTextEl ? titleTextEl.textContent.trim() : null;
+                const editableTitle = titleInput ? titleInput.value.trim() : topicTitle;
+                const titleWrapper = block.querySelector(".css-11s3wkf");
+                if (!titleWrapper) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = urlParams.get("course_id");
+                if (!courseId) return;
+
+                if (block.dataset.tptRendered === "1") return;
+                block.dataset.tptRendered = "1";
+
+                if (!editableTitle) {
+                    tryInjectPriceInput(block);
+                    return;
+                }
+
+                // Loader & ambil harga existing
+                if (!titleWrapper.querySelector(".tpt-badge-loader")) {
+                    const loader = document.createElement("span");
+                    loader.className = "tpt-badge-loader";
+                    loader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                    Object.assign(loader.style, {
+                        marginLeft: "10px",
+                        color: "#999",
+                        fontSize: "13px",
+                        opacity: "0.7",
+                    });
+                    titleWrapper.appendChild(loader);
+                }
+
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: "tpt_get_price",
+                    title: editableTitle,
+                    course_id: courseId,
+                    nonce: TPT_Ajax.nonce,
+                }).done((resp) => {
+                    titleWrapper.querySelectorAll(".tpt-badge-loader").forEach(el => el.remove());
+                    titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                    const price = parseInt(resp.data?.price || 0);
+                    if (price > 0) {
+                        const badge = document.createElement("span");
+                        badge.className = "tpt-price-badge";
+                        badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                        Object.assign(badge.style, {
+                            marginLeft: "12px",
+                            background: "#ED2D56",
+                            color: "#fff",
+                            fontSize: "14px",
+                            padding: "6px 18px",
+                            borderRadius: "20px",
+                            fontWeight: "600",
+                            boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            minWidth: "150px",
+                        });
+                        titleWrapper.appendChild(badge);
+                    }
+
+                    tryInjectPriceInput(block);
+                });
+            });
+        }, 200);
+    };
+
+    const observer = new MutationObserver(() => renderTopicPrices());
+    observer.observe(document.querySelector("#wpbody-content") || document.body, {
+        childList: true,
+        subtree: true,
+    });
+
+    renderTopicPrices();
+});
+
+// ini juga masih versi sebelumnya sebelum patch 24 nov 2025 - 3:35AM
+document.addEventListener("DOMContentLoaded", () => {
+    let renderTimeout;
+
+    const createPriceInput = (block, price = 0) => {
+        if (block.querySelector(".tpt-topic-price")) return; // jangan double inject
+
+        const titleInput = block.querySelector('input[name="title"]');
+        if (!titleInput) return;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.placeholder = "Harga per topic (Rp)";
+        input.className = "tpt-topic-price";
+        input.value = price; // <-- isi dengan harga existing
+        Object.assign(input.style, {
+            marginTop: "8px",
+            width: "200px",
+            fontSize: "13px",
+            padding: "6px 12px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            display: "block",
+            transition: "all 0.2s ease",
+        });
+        titleInput.parentElement.appendChild(input);
+
+        // Simpan saat user input
+        input.addEventListener("change", () => handlePriceSave(block, input));
+    };
+
+    const handlePriceSave = (block, input) => {
+        const price = parseInt(input.value || 0);
+        if (isNaN(price)) return;
+
+        const titleWrapper = block.querySelector(".css-11s3wkf");
+        if (!titleWrapper) return;
+
+        let saveLoader = titleWrapper.querySelector(".tpt-badge-loader");
+        if (!saveLoader) {
+            saveLoader = document.createElement("span");
+            saveLoader.className = "tpt-badge-loader";
+            saveLoader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            Object.assign(saveLoader.style, {
+                marginLeft: "10px",
+                color: "#999",
+                fontSize: "13px",
+                opacity: "0.7",
+            });
+            titleWrapper.appendChild(saveLoader);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get("course_id");
+        const editableTitle = block.querySelector('input[name="title"]').value.trim();
+
+        const waitForTopicId = (attempt = 0) => {
+            if (attempt > 20) {
+                saveLoader.remove();
+                input.style.borderColor = "#f44336";
+                input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                return;
+            }
+
+            jQuery.post(TPT_Ajax.ajax_url, {
+                action: "tpt_get_price",
+                title: editableTitle,
+                course_id: courseId,
+                nonce: TPT_Ajax.nonce,
+            }).done((resp) => {
+                const topicId = resp.data?.topic_id || 0;
+                if (topicId > 0) {
+                    jQuery.post(TPT_Ajax.ajax_url, {
+                        action: "tpt_save_price",
+                        title: editableTitle,
+                        course_id: courseId,
+                        price: price,
+                        nonce: TPT_Ajax.nonce,
+                    }, function (resp2) {
+                        saveLoader.remove();
+                        titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                        if (resp2.success) {
+                            const badge = document.createElement("span");
+                            badge.className = "tpt-price-badge";
+                            badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                            Object.assign(badge.style, {
+                                marginLeft: "12px",
+                                background: "#ED2D56",
+                                color: "#fff",
+                                fontSize: "14px",
+                                padding: "6px 18px",
+                                borderRadius: "20px",
+                                fontWeight: "600",
+                                boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "6px",
+                                minWidth: "150px",
+                            });
+                            titleWrapper.appendChild(badge);
+                        } else {
+                            input.style.borderColor = "#f44336";
+                            input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                        }
+                    });
+                } else {
+                    setTimeout(() => waitForTopicId(attempt + 1), 300);
+                }
+            });
+        };
+
+        waitForTopicId();
+    };
+
+    const renderTopicPrices = () => {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            const topicWrappers = document.querySelectorAll(".css-1g2ghqr, .css-rxenkd");
+            if (!topicWrappers.length) return;
+
+            topicWrappers.forEach(block => {
+                if (block.dataset.tptRendered === "1") return;
+                block.dataset.tptRendered = "1";
+
+                const titleInput = block.querySelector('input[name="title"]');
+                const titleTextEl = block.querySelector(".css-1jlm4v3");
+                const topicTitle = titleTextEl ? titleTextEl.textContent.trim() : null;
+                const editableTitle = titleInput ? titleInput.value.trim() : topicTitle;
+                const titleWrapper = block.querySelector(".css-11s3wkf");
+                if (!titleWrapper) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = urlParams.get("course_id");
+                if (!courseId) return;
+
+                // Loader & ambil harga existing
+                if (!titleWrapper.querySelector(".tpt-badge-loader")) {
+                    const loader = document.createElement("span");
+                    loader.className = "tpt-badge-loader";
+                    loader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                    Object.assign(loader.style, {
+                        marginLeft: "10px",
+                        color: "#999",
+                        fontSize: "13px",
+                        opacity: "0.7",
+                    });
+                    titleWrapper.appendChild(loader);
+                }
+
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: "tpt_get_price",
+                    title: editableTitle,
+                    course_id: courseId,
+                    nonce: TPT_Ajax.nonce,
+                }).done((resp) => {
+                    titleWrapper.querySelectorAll(".tpt-badge-loader").forEach(el => el.remove());
+                    titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                    const price = parseInt(resp.data?.price || 0);
+
+                    // Buat input dengan nilai existing
+                    createPriceInput(block, price);
+
+                    if (price > 0) {
+                        const badge = document.createElement("span");
+                        badge.className = "tpt-price-badge";
+                        badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                        Object.assign(badge.style, {
+                            marginLeft: "12px",
+                            background: "#ED2D56",
+                            color: "#fff",
+                            fontSize: "14px",
+                            padding: "6px 18px",
+                            borderRadius: "20px",
+                            fontWeight: "600",
+                            boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            minWidth: "150px",
+                        });
+                        titleWrapper.appendChild(badge);
+                    }
+                });
+            });
+        }, 200);
+    };
+
+    const observer = new MutationObserver(() => renderTopicPrices());
+    observer.observe(document.querySelector("#wpbody-content") || document.body, {
+        childList: true,
+        subtree: true,
+    });
+
+    renderTopicPrices();
+});
+
+// ini setelah patch 24 nov 2025 - 3:50AM
+document.addEventListener("DOMContentLoaded", () => {
+    let renderTimeout;
+
+    const createPriceInput = (block, price = 0) => {
+        if (block.querySelector(".tpt-topic-price")) return; // jangan double inject
+
+        const titleInput = block.querySelector('input[name="title"]');
+        if (!titleInput) return;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.placeholder = "Harga per topic (Rp)";
+        input.className = "tpt-topic-price";
+        input.value = price; // <-- isi dengan harga existing
+
+        // Simpan topic_id supaya bisa inject ke form
+        const topicId = block.dataset.topicId || null;
+        if (topicId) input.dataset.topicId = topicId;
+
+        Object.assign(input.style, {
+            marginTop: "8px",
+            width: "200px",
+            fontSize: "13px",
+            padding: "6px 12px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            display: "block",
+            transition: "all 0.2s ease",
+        });
+        titleInput.parentElement.appendChild(input);
+
+        // Simpan saat user input
+        input.addEventListener("change", () => handlePriceSave(block, input));
+    };
+
+    const handlePriceSave = (block, input) => {
+        const price = parseInt(input.value || 0);
+        if (isNaN(price)) return;
+
+        const titleWrapper = block.querySelector(".css-11s3wkf");
+        if (!titleWrapper) return;
+
+        let saveLoader = titleWrapper.querySelector(".tpt-badge-loader");
+        if (!saveLoader) {
+            saveLoader = document.createElement("span");
+            saveLoader.className = "tpt-badge-loader";
+            saveLoader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            Object.assign(saveLoader.style, {
+                marginLeft: "10px",
+                color: "#999",
+                fontSize: "13px",
+                opacity: "0.7",
+            });
+            titleWrapper.appendChild(saveLoader);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get("course_id");
+        const editableTitle = block.querySelector('input[name="title"]').value.trim();
+
+        const waitForTopicId = (attempt = 0) => {
+            if (attempt > 20) {
+                saveLoader.remove();
+                input.style.borderColor = "#f44336";
+                input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                return;
+            }
+
+            jQuery.post(TPT_Ajax.ajax_url, {
+                action: "tpt_get_price",
+                title: editableTitle,
+                course_id: courseId,
+                nonce: TPT_Ajax.nonce,
+            }).done((resp) => {
+                const topicId = resp.data?.topic_id || 0;
+                if (topicId > 0) {
+                    input.dataset.topicId = topicId; // set topic_id di input
+                    jQuery.post(TPT_Ajax.ajax_url, {
+                        action: "tpt_save_price",
+                        title: editableTitle,
+                        course_id: courseId,
+                        price: price,
+                        nonce: TPT_Ajax.nonce,
+                    }, function (resp2) {
+                        saveLoader.remove();
+                        titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                        if (resp2.success) {
+                            const badge = document.createElement("span");
+                            badge.className = "tpt-price-badge";
+                            badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                            Object.assign(badge.style, {
+                                marginLeft: "12px",
+                                background: "#ED2D56",
+                                color: "#fff",
+                                fontSize: "14px",
+                                padding: "6px 18px",
+                                borderRadius: "20px",
+                                fontWeight: "600",
+                                boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "6px",
+                                minWidth: "150px",
+                            });
+                            titleWrapper.appendChild(badge);
+                        } else {
+                            input.style.borderColor = "#f44336";
+                            input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                        }
+                    });
+                } else {
+                    setTimeout(() => waitForTopicId(attempt + 1), 300);
+                }
+            });
+        };
+
+        waitForTopicId();
+    };
+
+    const renderTopicPrices = () => {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            const topicWrappers = document.querySelectorAll(".css-1g2ghqr, .css-rxenkd");
+            if (!topicWrappers.length) return;
+
+            topicWrappers.forEach(block => {
+                if (block.dataset.tptRendered === "1") return;
+                block.dataset.tptRendered = "1";
+
+                const titleInput = block.querySelector('input[name="title"]');
+                const titleTextEl = block.querySelector(".css-1jlm4v3");
+                const topicTitle = titleTextEl ? titleTextEl.textContent.trim() : null;
+                const editableTitle = titleInput ? titleInput.value.trim() : topicTitle;
+                const titleWrapper = block.querySelector(".css-11s3wkf");
+                if (!titleWrapper) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = urlParams.get("course_id");
+                if (!courseId) return;
+
+                // Loader & ambil harga existing
+                if (!titleWrapper.querySelector(".tpt-badge-loader")) {
+                    const loader = document.createElement("span");
+                    loader.className = "tpt-badge-loader";
+                    loader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                    Object.assign(loader.style, {
+                        marginLeft: "10px",
+                        color: "#999",
+                        fontSize: "13px",
+                        opacity: "0.7",
+                    });
+                    titleWrapper.appendChild(loader);
+                }
+
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: "tpt_get_price",
+                    title: editableTitle,
+                    course_id: courseId,
+                    nonce: TPT_Ajax.nonce,
+                }).done((resp) => {
+                    titleWrapper.querySelectorAll(".tpt-badge-loader").forEach(el => el.remove());
+                    titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                    const price = parseInt(resp.data?.price || 0);
+
+                    // Buat input dengan nilai existing
+                    createPriceInput(block, price);
+
+                    if (price > 0) {
+                        const badge = document.createElement("span");
+                        badge.className = "tpt-price-badge";
+                        badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                        Object.assign(badge.style, {
+                            marginLeft: "12px",
+                            background: "#ED2D56",
+                            color: "#fff",
+                            fontSize: "14px",
+                            padding: "6px 18px",
+                            borderRadius: "20px",
+                            fontWeight: "600",
+                            boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            minWidth: "150px",
+                        });
+                        titleWrapper.appendChild(badge);
+                    }
+                });
+            });
+        }, 200);
+    };
+
+    // Observer untuk detect DOM update
+    const observer = new MutationObserver(() => renderTopicPrices());
+    observer.observe(document.querySelector("#wpbody-content") || document.body, {
+        childList: true,
+        subtree: true,
+    });
+
+    renderTopicPrices();
+
+    // 🔹 Inject harga ke form Tutor LMS saat submit
+    const injectPricingOnSubmit = () => {
+        const courseForm = document.querySelector('form[data-course-id]');
+        if (!courseForm) return;
+
+        courseForm.addEventListener('submit', () => {
+            document.querySelectorAll('.tpt-topic-price').forEach(input => {
+                const topicId = input.dataset.topicId || null;
+                if (!topicId) return;
+
+                // Hapus hidden input lama dulu kalau ada
+                const existing = courseForm.querySelector(`input[name="pricing[${topicId}]"]`);
+                if (existing) existing.remove();
+
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = `pricing[${topicId}]`; // Tutor LMS expects this format
+                hidden.value = input.value;
+                courseForm.appendChild(hidden);
+            });
+        });
+    };
+
+    injectPricingOnSubmit();
+});
+
+
+
+
+
+
+// Backup yang paling Fix dan berhasil 25 Nov 2025 / 11:12 PM (Malam dirumah)
+document.addEventListener("DOMContentLoaded", () => {
+    let renderTimeout;
+
+    // 🔹 Buat input harga per topic
+    const createPriceInput = (block, price = 0) => {
+        if (block.querySelector(".tpt-topic-price")) return; // jangan double inject
+
+        const titleInput = block.querySelector('input[name="title"]');
+        if (!titleInput) return;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.placeholder = "Harga per topic (Rp)";
+        input.className = "tpt-topic-price";
+        input.value = price; // isi dengan harga existing
+
+        // simpan topic_id supaya bisa inject ke form
+        const topicId = block.dataset.topicId || null;
+        if (topicId) input.dataset.topicId = topicId;
+
+        Object.assign(input.style, {
+            marginTop: "8px",
+            width: "200px",
+            fontSize: "13px",
+            padding: "6px 12px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            display: "block",
+            transition: "all 0.2s ease",
+        });
+        titleInput.parentElement.appendChild(input);
+
+        // Simpan saat user input
+        input.addEventListener("change", () => handlePriceSave(block, input));
+    };
+
+    // 🔹 Handle simpan harga via AJAX
+    const handlePriceSave = (block, input) => {
+        const price = parseInt(input.value || 0);
+        if (isNaN(price)) return;
+
+        const titleWrapper = block.querySelector(".css-11s3wkf");
+        if (!titleWrapper) return;
+
+        let saveLoader = titleWrapper.querySelector(".tpt-badge-loader");
+        if (!saveLoader) {
+            saveLoader = document.createElement("span");
+            saveLoader.className = "tpt-badge-loader";
+            saveLoader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            Object.assign(saveLoader.style, {
+                marginLeft: "10px",
+                color: "#999",
+                fontSize: "13px",
+                opacity: "0.7",
+            });
+            titleWrapper.appendChild(saveLoader);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get("course_id");
+        const editableTitle = block.querySelector('input[name="title"]').value.trim();
+
+        const waitForTopicId = (attempt = 0) => {
+            if (attempt > 20) {
+                saveLoader.remove();
+                input.style.borderColor = "#f44336";
+                input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                return;
+            }
+
+            jQuery.post(TPT_Ajax.ajax_url, {
+                action: "tpt_get_price",
+                title: editableTitle,
+                course_id: courseId,
+                nonce: TPT_Ajax.nonce,
+            }).done((resp) => {
+                const topicId = resp.data?.topic_id || 0;
+                if (topicId > 0) {
+                    input.dataset.topicId = topicId; // set topic_id di input
+                    jQuery.post(TPT_Ajax.ajax_url, {
+                        action: "tpt_save_price",
+                        title: editableTitle,
+                        course_id: courseId,
+                        price: price,
+                        nonce: TPT_Ajax.nonce,
+                    }, function (resp2) {
+                        saveLoader.remove();
+                        titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                        if (resp2.success) {
+                            const badge = document.createElement("span");
+                            badge.className = "tpt-price-badge";
+                            badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                            Object.assign(badge.style, {
+                                marginLeft: "12px",
+                                background: "#ED2D56",
+                                color: "#fff",
+                                fontSize: "14px",
+                                padding: "6px 18px",
+                                borderRadius: "20px",
+                                fontWeight: "600",
+                                boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "6px",
+                                minWidth: "150px",
+                            });
+                            titleWrapper.appendChild(badge);
+                        } else {
+                            input.style.borderColor = "#f44336";
+                            input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                        }
+                    });
+                } else {
+                    setTimeout(() => waitForTopicId(attempt + 1), 300);
+                }
+            });
+        };
+
+        waitForTopicId();
+    };
+
+    // 🔹 Render harga dan badge topic
+    const renderTopicPrices = () => {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            const topicWrappers = document.querySelectorAll(".css-1g2ghqr, .css-rxenkd");
+            if (!topicWrappers.length) return;
+
+            topicWrappers.forEach(block => {
+                if (block.dataset.tptRendered === "1") return;
+                block.dataset.tptRendered = "1";
+
+                const titleInput = block.querySelector('input[name="title"]');
+                const titleTextEl = block.querySelector(".css-1jlm4v3");
+                const topicTitle = titleTextEl ? titleTextEl.textContent.trim() : null;
+                const editableTitle = titleInput ? titleInput.value.trim() : topicTitle;
+                const titleWrapper = block.querySelector(".css-11s3wkf");
+                if (!titleWrapper) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = urlParams.get("course_id");
+                if (!courseId) return;
+
+                // Loader & ambil harga existing
+                if (!titleWrapper.querySelector(".tpt-badge-loader")) {
+                    const loader = document.createElement("span");
+                    loader.className = "tpt-badge-loader";
+                    loader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                    Object.assign(loader.style, {
+                        marginLeft: "10px",
+                        color: "#999",
+                        fontSize: "13px",
+                        opacity: "0.7",
+                    });
+                    titleWrapper.appendChild(loader);
+                }
+
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: "tpt_get_price",
+                    title: editableTitle,
+                    course_id: courseId,
+                    nonce: TPT_Ajax.nonce,
+                }).done((resp) => {
+                    titleWrapper.querySelectorAll(".tpt-badge-loader").forEach(el => el.remove());
+                    titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                    const price = parseInt(resp.data?.price || 0);
+
+                    // Buat input dengan nilai existing
+                    createPriceInput(block, price);
+
+                    if (price > 0) {
+                        const badge = document.createElement("span");
+                        badge.className = "tpt-price-badge";
+                        badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                        Object.assign(badge.style, {
+                            marginLeft: "12px",
+                            background: "#ED2D56",
+                            color: "#fff",
+                            fontSize: "14px",
+                            padding: "6px 18px",
+                            borderRadius: "20px",
+                            fontWeight: "600",
+                            boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            minWidth: "150px",
+                        });
+                        titleWrapper.appendChild(badge);
+                    }
+                });
+            });
+        }, 200);
+    };
+
+    // Observer untuk detect DOM update
+    const observer = new MutationObserver(() => renderTopicPrices());
+    observer.observe(document.querySelector("#wpbody-content") || document.body, {
+        childList: true,
+        subtree: true,
+    });
+
+    renderTopicPrices();
+
+    // 🔹 Inject harga sebelum tombol "Update" React Tutor LMS
+    // 🔹 Inject harga sebelum tombol "Update" React Tutor LMS
+    const injectPricingBeforeReactUpdate = () => {
+        const updateBtn = document.querySelector('button[data-cy="course-builder-submit-button"]');
+        if (!updateBtn) return;
+
+        updateBtn.addEventListener('click', () => {
+            const courseForm = document.querySelector('form[data-course-id]');
+            if (!courseForm) return;
+
+            const topicInputs = Array.from(document.querySelectorAll('.tpt-topic-price'));
+            if (!topicInputs.length) return;
+
+            // hapus semua input lama
+            courseForm.querySelectorAll('input[name^="pricing["]').forEach(el => el.remove());
+
+            // 🔸 1️⃣ inject semua topic price (untuk plugin custom)
+            topicInputs.forEach(input => {
+                const topicId = input.dataset.topicId || null;
+                if (!topicId) return;
+
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = `tpt_pricing[${topicId}]`;
+                hidden.value = input.value || 0;
+                courseForm.appendChild(hidden);
+            });
+
+            // 🔸 2️⃣ ambil harga topic pertama sebagai regular price utama
+            const firstTopicPrice = parseInt(topicInputs[0].value || 0);
+            if (!isNaN(firstTopicPrice) && firstTopicPrice > 0) {
+                const mainPriceInput = document.createElement('input');
+                mainPriceInput.type = 'hidden';
+                mainPriceInput.name = 'pricing[regular_price]';
+                mainPriceInput.value = firstTopicPrice;
+                courseForm.appendChild(mainPriceInput);
+            } else {
+                // fallback ke 0 kalau kosong
+                const dummy = document.createElement('input');
+                dummy.type = 'hidden';
+                dummy.name = 'pricing[regular_price]';
+                dummy.value = 0;
+                courseForm.appendChild(dummy);
+            }
+
+            console.log('✅ Injected pricing fields before submit');
+        });
+    };
+
+    injectPricingBeforeReactUpdate();
+
+});
+
+// ==========================================
+// 🩹 Patch Tutor LMS 3.9+ Axios Intercept
+// Force tambahkan dummy pricing agar tidak error 422
+// ==========================================
+(function interceptTutorAxios() {
+    const waitAxios = () => {
+        if (typeof window.axios === "undefined" || !window.axios.interceptors) {
+            return setTimeout(waitAxios, 1000);
+        }
+        if (window.__tptAxiosIntercepted) return;
+        window.__tptAxiosIntercepted = true;
+
+        window.axios.interceptors.request.use((config) => {
+            try {
+                if (config.url && config.url.includes("/wp-json/tutor/v1/courses/")) {
+                    if (!config.data || !config.data.pricing) {
+                        const firstTopicInput = document.querySelector(".tpt-topic-price");
+                        const firstPrice = firstTopicInput
+                            ? parseInt(firstTopicInput.value || 0)
+                            : 0;
+
+                        config.data = config.data || {};
+                        config.data.pricing = {
+                            regular_price: firstPrice > 0 ? firstPrice : 0,
+                        };
+
+                        console.log("💡 [Tutor Patch] Injected dummy pricing:", config.data.pricing);
+                    }
+                }
+            } catch (err) {
+                console.warn("⚠️ Tutor Axios intercept error:", err);
+            }
+            return config;
+        });
+
+        console.log("✅ Tutor LMS 3.9 Axios patch active");
+    };
+
+    waitAxios();
+})();
+
+
+console.log("🔥 [TPT] admin.js loaded");
+
+// Tunggu tombol OK di modal edit topic
+(function interceptTutorSaveTopic() {
+    const observe = () => {
+        const btns = document.querySelectorAll('button[data-cy="save-topic"], .css-u5asr1');
+        if (!btns.length) return setTimeout(observe, 1000);
+
+        btns.forEach(btn => {
+            if (btn.dataset.tptBound === "1") return;
+            btn.dataset.tptBound = "1";
+
+            btn.addEventListener('click', () => {
+                console.log("🟡 [TPT] Tombol OK diklik...");
+                const modal = btn.closest('.css-oks3g7');
+                if (!modal) {
+                    console.warn("⚠️ [TPT] Modal tidak ditemukan.");
+                    return;
+                }
+
+                // tunggu title input muncul
+                const waitForTitle = (attempt = 0) => {
+                    const titleInput = modal.querySelector('input[name="title"]');
+                    const title = titleInput ? titleInput.value.trim() : null;
+
+                    if (!title) {
+                        if (attempt < 10) {
+                            return setTimeout(() => waitForTitle(attempt + 1), 100);
+                        }
+                        console.warn("⚠️ [TPT] Gagal: title tidak ditemukan di modal (setelah 1s).");
+                        return;
+                    }
+
+                    // cari input harga di DOM utama yang cocok dengan judul topic
+                    const priceInput = [...document.querySelectorAll('.tpt-topic-price')].find(el => {
+                        const topicBlock = el.closest('.css-1g2ghqr, .css-rxenkd');
+                        const inputTitle = topicBlock?.querySelector('input[name="title"]')?.value.trim();
+                        const labelTitle = topicBlock?.querySelector('.css-1jlm4v3')?.textContent.trim();
+                        return inputTitle === title || labelTitle === title;
+                    });
+
+                    if (!priceInput) {
+                        console.warn("⚠️ [TPT] Tidak menemukan input harga untuk:", title);
+                        return;
+                    }
+
+                    const price = parseInt(priceInput.value || 0);
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const course_id = urlParams.get("course_id");
+
+                    if (!course_id) {
+                        console.warn("⚠️ [TPT] course_id tidak ditemukan.");
+                        return;
+                    }
+
+                    console.log("📦 [TPT] Mengirim AJAX ke server...", { title, price, course_id });
+
+                    jQuery.post(TPT_Ajax.ajax_url, {
+                        action: "tpt_save_price",
+                        title,
+                        course_id,
+                        price,
+                        nonce: TPT_Ajax.nonce
+                    }).done(resp => {
+                        if (resp.success) {
+                            console.log("✅ Topic price saved & WC product created:", resp.data);
+
+                            // 🧩 Tambahan Baru: Auto-select product ke tab Basics
+                            const { wc_id, topic_id } = resp.data;
+                            if (!wc_id || !topic_id) return;
+
+                            // 🔹 hanya untuk topic pertama (paling awal)
+                            jQuery.post(TPT_Ajax.ajax_url, {
+                                action: "tpt_get_price",
+                                title,
+                                course_id,
+                                nonce: TPT_Ajax.nonce
+                            }).done(resp2 => {
+                                if (resp2.success && parseInt(resp2.data.topic_id) === parseInt(topic_id)) {
+                                    const waitForSelect = (attempt = 0) => {
+                                        const input = document.querySelector('input[name="course_product_id"]');
+                                        if (!input) {
+                                            if (attempt < 20) return setTimeout(() => waitForSelect(attempt + 1), 300);
+                                            return;
+                                        }
+
+                                        console.log("🔧 [TPT] Auto-select product:", wc_id);
+                                        input.value = wc_id;
+
+                                        // trigger event agar React Tutor mendeteksi perubahan
+                                        input.dispatchEvent(new Event("input", { bubbles: true }));
+                                        input.dispatchEvent(new Event("change", { bubbles: true }));
+
+                                        // feedback visual
+                                        input.style.borderColor = "#4CAF50";
+                                        input.style.boxShadow = "0 0 6px rgba(76,175,80,0.5)";
+                                        setTimeout(() => {
+                                            input.style.borderColor = "";
+                                            input.style.boxShadow = "";
+                                        }, 1000);
+                                    };
+                                    waitForSelect();
+                                }
+                            });
+                        } else {
+                            console.warn("❌ Gagal simpan harga:", resp);
+                        }
+                    }).fail(err => {
+                        console.error("⚠️ AJAX gagal:", err);
+                    });
+                };
+
+                waitForTitle();
+            });
+        });
+    };
+
+    observe();
+})();
+
+// ==========================================
+// ⚙️ Tutor LMS React Select Fix (auto-fill produk baru langsung ke input Pricing Model)
+// ==========================================
+(function tptSelectProductFix() {
+    const observer = new MutationObserver(() => {
+        const okBtns = document.querySelectorAll('button[data-cy="save-topic"]');
+        okBtns.forEach(btn => {
+            if (btn.dataset.tptHooked === "1") return;
+            btn.dataset.tptHooked = "1";
+
+            btn.addEventListener("click", async () => {
+                console.log("🟡 [TPT] OK button clicked → auto-fill product input");
+
+                const modal = btn.closest(".css-oks3g7, [role='dialog']");
+                if (!modal) return;
+
+                // ambil title topic dari modal
+                let title = null;
+                for (let i = 0; i < 20; i++) {
+                    const t = modal.querySelector("input[name='title']");
+                    if (t && t.value.trim()) {
+                        title = t.value.trim();
+                        break;
+                    }
+                    await new Promise(r => setTimeout(r, 100));
+                }
+                if (!title) return console.warn("⚠️ [TPT] Tidak menemukan title topic di modal");
+
+                // ambil price
+                const priceInput = [...document.querySelectorAll(".tpt-topic-price")].find(el => {
+                    const block = el.closest(".css-1g2ghqr, .css-rxenkd");
+                    const titleEl = block?.querySelector("input[name='title']")?.value.trim() || "";
+                    const labelEl = block?.querySelector(".css-1jlm4v3")?.textContent.trim() || "";
+                    return titleEl === title || labelEl === title;
+                });
+                if (!priceInput) return;
+
+                const price = parseInt(priceInput.value || 0);
+                const urlParams = new URLSearchParams(window.location.search);
+                const course_id = urlParams.get("course_id");
+                if (!course_id) return;
+
+                // kirim AJAX ke server
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: "tpt_save_price",
+                    title,
+                    course_id,
+                    price,
+                    nonce: TPT_Ajax.nonce,
+                }).done(async (resp) => {
+                    if (!resp.success) return console.warn("❌ Gagal simpan harga", resp);
+                    const { wc_id } = resp.data;
+                    if (!wc_id) return;
+
+                    console.log("✅ Topic price saved & WC product created:", resp.data);
+
+                    // pastikan tab Basics terbuka
+                    const basicsTabBtn = [...document.querySelectorAll("button, a")]
+                        .find(el => /Basics/i.test(el.textContent || ""));
+                    if (basicsTabBtn) {
+                        basicsTabBtn.click();
+                        console.log("📂 [TPT] Tab 'Basics' dibuka otomatis");
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+
+                    // cari input Pricing Model
+                    let productInput = null;
+                    for (let i = 0; i < 30; i++) {
+                        productInput = document.querySelector("input[name='course_product_id'][data-select='true']");
+                        if (productInput) break;
+                        await new Promise(r => setTimeout(r, 300));
+                    }
+
+                    if (!productInput) {
+                        console.warn("⚠️ [TPT] Input product belum ditemukan setelah 9 detik");
+                        return;
+                    }
+
+                    // langsung isi value
+                    // gunakan properti setter asli agar React detect
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                    nativeInputValueSetter.call(productInput, title);
+
+                    // kirim event seperti input user asli
+                    const inputEvent = new Event("input", { bubbles: true });
+                    productInput.dispatchEvent(inputEvent);
+
+                    console.log("🧩 [TPT] Input course_product_id diset (React-safe):", title);
+
+                    // efek visual
+                    productInput.style.borderColor = "#4CAF50";
+                    productInput.style.boxShadow = "0 0 6px rgba(76,175,80,0.5)";
+                    setTimeout(() => {
+                        productInput.style.borderColor = "";
+                        productInput.style.boxShadow = "";
+                    }, 1000);
+
+                });
+            });
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+})();
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    let renderTimeout;
+
+    // 🔹 Buat input harga per topic
+    const createPriceInput = (block, price = 0) => {
+        if (block.querySelector(".tpt-topic-price")) return; // jangan double inject
+
+        const titleInput = block.querySelector('input[name="title"]');
+        if (!titleInput) return;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.placeholder = "Harga per topic (Rp)";
+        input.className = "tpt-topic-price";
+        input.value = price; // isi dengan harga existing
+
+        // simpan topic_id supaya bisa inject ke form
+        const topicId = block.dataset.topicId || null;
+        if (topicId) input.dataset.topicId = topicId;
+
+        Object.assign(input.style, {
+            marginTop: "8px",
+            width: "200px",
+            fontSize: "13px",
+            padding: "6px 12px",
+            border: "1px solid #ccc",
+            borderRadius: "8px",
+            display: "block",
+            transition: "all 0.2s ease",
+        });
+        titleInput.parentElement.appendChild(input);
+
+        // Simpan saat user input
+        input.addEventListener("change", () => handlePriceSave(block, input));
+    };
+
+    // 🔹 Handle simpan harga via AJAX
+    const handlePriceSave = (block, input) => {
+        const price = parseInt(input.value || 0);
+        if (isNaN(price)) return;
+
+        const titleWrapper = block.querySelector(".css-11s3wkf");
+        if (!titleWrapper) return;
+
+        let saveLoader = titleWrapper.querySelector(".tpt-badge-loader");
+        if (!saveLoader) {
+            saveLoader = document.createElement("span");
+            saveLoader.className = "tpt-badge-loader";
+            saveLoader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            Object.assign(saveLoader.style, {
+                marginLeft: "10px",
+                color: "#999",
+                fontSize: "13px",
+                opacity: "0.7",
+            });
+            titleWrapper.appendChild(saveLoader);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get("course_id");
+        const editableTitle = block.querySelector('input[name="title"]').value.trim();
+
+        const waitForTopicId = (attempt = 0) => {
+            if (attempt > 20) {
+                saveLoader.remove();
+                input.style.borderColor = "#f44336";
+                input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                return;
+            }
+
+            jQuery.post(TPT_Ajax.ajax_url, {
+                action: "tpt_get_price",
+                title: editableTitle,
+                course_id: courseId,
+                nonce: TPT_Ajax.nonce,
+            }).done((resp) => {
+                const topicId = resp.data?.topic_id || 0;
+                if (topicId > 0) {
+                    input.dataset.topicId = topicId; // set topic_id di input
+                    jQuery.post(TPT_Ajax.ajax_url, {
+                        action: "tpt_save_price",
+                        title: editableTitle,
+                        course_id: courseId,
+                        price: price,
+                        nonce: TPT_Ajax.nonce,
+                    }, function (resp2) {
+                        saveLoader.remove();
+                        titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                        if (resp2.success) {
+                            const badge = document.createElement("span");
+                            badge.className = "tpt-price-badge";
+                            badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                            Object.assign(badge.style, {
+                                marginLeft: "12px",
+                                background: "#ED2D56",
+                                color: "#fff",
+                                fontSize: "14px",
+                                padding: "6px 18px",
+                                borderRadius: "20px",
+                                fontWeight: "600",
+                                boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "6px",
+                                minWidth: "150px",
+                            });
+                            titleWrapper.appendChild(badge);
+                        } else {
+                            input.style.borderColor = "#f44336";
+                            input.style.boxShadow = "0 0 6px rgba(244,67,54,0.5)";
+                        }
+                    });
+                } else {
+                    setTimeout(() => waitForTopicId(attempt + 1), 300);
+                }
+            });
+        };
+
+        waitForTopicId();
+    };
+
+    // 🔹 Render harga dan badge topic
+    const renderTopicPrices = () => {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            const topicWrappers = document.querySelectorAll(".css-1g2ghqr, .css-rxenkd");
+            if (!topicWrappers.length) return;
+
+            topicWrappers.forEach(block => {
+                if (block.dataset.tptRendered === "1") return;
+                block.dataset.tptRendered = "1";
+
+                const titleInput = block.querySelector('input[name="title"]');
+                const titleTextEl = block.querySelector(".css-1jlm4v3");
+                const topicTitle = titleTextEl ? titleTextEl.textContent.trim() : null;
+                const editableTitle = titleInput ? titleInput.value.trim() : topicTitle;
+                const titleWrapper = block.querySelector(".css-11s3wkf");
+                if (!titleWrapper) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const courseId = urlParams.get("course_id");
+                if (!courseId) return;
+
+                // Loader & ambil harga existing
+                if (!titleWrapper.querySelector(".tpt-badge-loader")) {
+                    const loader = document.createElement("span");
+                    loader.className = "tpt-badge-loader";
+                    loader.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+                    Object.assign(loader.style, {
+                        marginLeft: "10px",
+                        color: "#999",
+                        fontSize: "13px",
+                        opacity: "0.7",
+                    });
+                    titleWrapper.appendChild(loader);
+                }
+
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: "tpt_get_price",
+                    title: editableTitle,
+                    course_id: courseId,
+                    nonce: TPT_Ajax.nonce,
+                }).done((resp) => {
+                    titleWrapper.querySelectorAll(".tpt-badge-loader").forEach(el => el.remove());
+                    titleWrapper.querySelectorAll(".tpt-price-badge").forEach(el => el.remove());
+
+                    const price = parseInt(resp.data?.price || 0);
+
+                    // Buat input dengan nilai existing
+                    createPriceInput(block, price);
+
+                    if (price > 0) {
+                        const badge = document.createElement("span");
+                        badge.className = "tpt-price-badge";
+                        badge.innerHTML = `<i class="fa-solid fa-coins"></i> Rp ${price.toLocaleString()}`;
+                        Object.assign(badge.style, {
+                            marginLeft: "12px",
+                            background: "#ED2D56",
+                            color: "#fff",
+                            fontSize: "14px",
+                            padding: "6px 18px",
+                            borderRadius: "20px",
+                            fontWeight: "600",
+                            boxShadow: "0 2px 8px rgba(237,45,86,0.4)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            minWidth: "150px",
+                        });
+                        titleWrapper.appendChild(badge);
+                    }
+                });
+            });
+        }, 200);
+    };
+
+    // Observer untuk detect DOM update
+    const observer = new MutationObserver(() => renderTopicPrices());
+    observer.observe(document.querySelector("#wpbody-content") || document.body, {
+        childList: true,
+        subtree: true,
+    });
+
+    renderTopicPrices();
+
+    // 🔹 Inject harga sebelum tombol "Update" React Tutor LMS
+    // const injectPricingBeforeReactUpdate = () => {
+    //     const updateBtn = document.querySelector('button[data-cy="course-builder-submit-button"]');
+    //     if (!updateBtn) return;
+
+    //     updateBtn.addEventListener('click', () => {
+    //         const courseForm = document.querySelector('form[data-course-id]');
+    //         if (!courseForm) return;
+
+    //         const topicInputs = Array.from(document.querySelectorAll('.tpt-topic-price'));
+    //         if (!topicInputs.length) return;
+
+    //         // hapus semua input lama
+    //         courseForm.querySelectorAll('input[name^="pricing["]').forEach(el => el.remove());
+
+    //         // 🔸 1️⃣ inject semua topic price (untuk plugin custom)
+    //         topicInputs.forEach(input => {
+    //             const topicId = input.dataset.topicId || null;
+    //             if (!topicId) return;
+
+    //             const hidden = document.createElement('input');
+    //             hidden.type = 'hidden';
+    //             hidden.name = `tpt_pricing[${topicId}]`;
+    //             hidden.value = input.value || 0;
+    //             courseForm.appendChild(hidden);
+    //         });
+
+    //         // 🔸 2️⃣ ambil harga topic pertama sebagai regular price utama
+    //         const firstTopicPrice = parseInt(topicInputs[0].value || 0);
+    //         if (!isNaN(firstTopicPrice) && firstTopicPrice > 0) {
+    //             const mainPriceInput = document.createElement('input');
+    //             mainPriceInput.type = 'hidden';
+    //             mainPriceInput.name = 'pricing[regular_price]';
+    //             mainPriceInput.value = firstTopicPrice;
+    //             courseForm.appendChild(mainPriceInput);
+    //         } else {
+    //             // fallback ke 0 kalau kosong
+    //             const dummy = document.createElement('input');
+    //             dummy.type = 'hidden';
+    //             dummy.name = 'pricing[regular_price]';
+    //             dummy.value = 0;
+    //             courseForm.appendChild(dummy);
+    //         }
+
+    //         console.log('✅ Injected pricing fields before submit');
+    //     });
+    // };
+    const injectPricingBeforeReactUpdate = () => {
+        const updateBtn = document.querySelector('button[data-cy="course-builder-submit-button"]');
+        if (!updateBtn) return;
+
+        updateBtn.addEventListener('click', (e) => {
+            const courseForm = document.querySelector('form[data-course-id]');
+            if (!courseForm) return;
+
+            // hapus input lama
+            courseForm.querySelectorAll('input[name^="pricing["]').forEach(el => el.remove());
+
+            // inject harga semua topic
+            const topicInputs = Array.from(document.querySelectorAll('.tpt-topic-price'));
+            topicInputs.forEach(input => {
+                const topicId = input.dataset.topicId || null;
+                if (!topicId) return;
+
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = `tpt_pricing[${topicId}]`;
+                hidden.value = input.value || 0;
+                courseForm.appendChild(hidden);
+            });
+
+            // ambil harga topic pertama sebagai main price
+            let firstPrice = 0;
+            if (topicInputs.length > 0) firstPrice = parseInt(topicInputs[0].value || 0);
+            if (isNaN(firstPrice)) firstPrice = 0;
+
+            const mainPriceInput = document.createElement('input');
+            mainPriceInput.type = 'hidden';
+            mainPriceInput.name = 'pricing[regular_price]';
+            mainPriceInput.value = firstPrice;
+            courseForm.appendChild(mainPriceInput);
+
+            console.log('✅ Injected pricing fields before submit');
+        }, true); // gunakan capture phase agar event sebelum React
+    };
+
+    injectPricingBeforeReactUpdate();
+
+});
+
+// ==========================================
+// 🩹 Patch Tutor LMS 3.9+ Axios Intercept
+// Force tambahkan dummy pricing agar tidak error 422
+// ==========================================
+(function interceptTutorAxios() {
+    const waitAxios = () => {
+        if (typeof window.axios === "undefined" || !window.axios.interceptors) {
+            return setTimeout(waitAxios, 1000);
+        }
+        if (window.__tptAxiosIntercepted) return;
+        window.__tptAxiosIntercepted = true;
+
+        window.axios.interceptors.request.use((config) => {
+            try {
+                if (config.url && config.url.includes("/wp-json/tutor/v1/courses/")) {
+                    if (!config.data || !config.data.pricing) {
+                        const firstTopicInput = document.querySelector(".tpt-topic-price");
+                        const firstPrice = firstTopicInput
+                            ? parseInt(firstTopicInput.value || 0)
+                            : 0;
+
+                        config.data = config.data || {};
+                        config.data.pricing = {
+                            regular_price: firstPrice > 0 ? firstPrice : 0,
+                        };
+
+                        console.log("💡 [Tutor Patch] Injected dummy pricing:", config.data.pricing);
+                    }
+                }
+            } catch (err) {
+                console.warn("⚠️ Tutor Axios intercept error:", err);
+            }
+            return config;
+        });
+
+        console.log("✅ Tutor LMS 3.9 Axios patch active");
+    };
+
+    waitAxios();
+})();
+
+
+console.log("🔥 [TPT] admin.js loaded");
+
+// Tunggu tombol OK di modal edit topic
+(function interceptTutorSaveTopic() {
+    const observe = () => {
+        const btns = document.querySelectorAll('button[data-cy="save-topic"], .css-u5asr1');
+        if (!btns.length) return setTimeout(observe, 1000);
+
+        btns.forEach(btn => {
+            if (btn.dataset.tptBound === "1") return;
+            btn.dataset.tptBound = "1";
+
+            btn.addEventListener('click', () => {
+                console.log("🟡 [TPT] Tombol OK diklik...");
+                const modal = btn.closest('.css-oks3g7');
+                if (!modal) {
+                    console.warn("⚠️ [TPT] Modal tidak ditemukan.");
+                    return;
+                }
+
+                // tunggu title input muncul
+                const waitForTitle = (attempt = 0) => {
+                    const titleInput = modal.querySelector('input[name="title"]');
+                    const title = titleInput ? titleInput.value.trim() : null;
+
+                    if (!title) {
+                        if (attempt < 10) {
+                            return setTimeout(() => waitForTitle(attempt + 1), 100);
+                        }
+                        console.warn("⚠️ [TPT] Gagal: title tidak ditemukan di modal (setelah 1s).");
+                        return;
+                    }
+
+                    // cari input harga di DOM utama yang cocok dengan judul topic
+                    const priceInput = [...document.querySelectorAll('.tpt-topic-price')].find(el => {
+                        const topicBlock = el.closest('.css-1g2ghqr, .css-rxenkd');
+                        const inputTitle = topicBlock?.querySelector('input[name="title"]')?.value.trim();
+                        const labelTitle = topicBlock?.querySelector('.css-1jlm4v3')?.textContent.trim();
+                        return inputTitle === title || labelTitle === title;
+                    });
+
+                    if (!priceInput) {
+                        console.warn("⚠️ [TPT] Tidak menemukan input harga untuk:", title);
+                        return;
+                    }
+
+                    const price = parseInt(priceInput.value || 0);
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const course_id = urlParams.get("course_id");
+
+                    if (!course_id) {
+                        console.warn("⚠️ [TPT] course_id tidak ditemukan.");
+                        return;
+                    }
+
+                    console.log("📦 [TPT] Mengirim AJAX ke server...", { title, price, course_id });
+
+                    jQuery.post(TPT_Ajax.ajax_url, {
+                        action: "tpt_save_price",
+                        title,
+                        course_id,
+                        price,
+                        nonce: TPT_Ajax.nonce
+                    }).done(resp => {
+                        if (resp.success) {
+                            console.log("✅ Topic price saved & WC product created:", resp.data);
+
+                            // 🧩 Tambahan Baru: Auto-select product ke tab Basics
+                            const { wc_id, topic_id } = resp.data;
+                            if (!wc_id || !topic_id) return;
+
+                            // 🔹 hanya untuk topic pertama (paling awal)
+                            jQuery.post(TPT_Ajax.ajax_url, {
+                                action: "tpt_get_price",
+                                title,
+                                course_id,
+                                nonce: TPT_Ajax.nonce
+                            }).done(resp2 => {
+                                if (resp2.success && parseInt(resp2.data.topic_id) === parseInt(topic_id)) {
+                                    const waitForSelect = (attempt = 0) => {
+                                        const input = document.querySelector('input[name="course_product_id"]');
+                                        if (!input) {
+                                            if (attempt < 20) return setTimeout(() => waitForSelect(attempt + 1), 300);
+                                            return;
+                                        }
+
+                                        console.log("🔧 [TPT] Auto-select product:", wc_id);
+                                        input.value = wc_id;
+
+                                        // trigger event agar React Tutor mendeteksi perubahan
+                                        input.dispatchEvent(new Event("input", { bubbles: true }));
+                                        input.dispatchEvent(new Event("change", { bubbles: true }));
+
+                                        // feedback visual
+                                        input.style.borderColor = "#4CAF50";
+                                        input.style.boxShadow = "0 0 6px rgba(76,175,80,0.5)";
+                                        setTimeout(() => {
+                                            input.style.borderColor = "";
+                                            input.style.boxShadow = "";
+                                        }, 1000);
+                                    };
+                                    waitForSelect();
+                                }
+                            });
+                        } else {
+                            console.warn("❌ Gagal simpan harga:", resp);
+                        }
+                    }).fail(err => {
+                        console.error("⚠️ AJAX gagal:", err);
+                    });
+                };
+
+                waitForTitle();
+            });
+        });
+    };
+
+    observe();
+})();
+
+// ==========================================
+// ⚙️ Tutor LMS React Select Fix (auto-fill produk baru langsung ke input Pricing Model)
+// ==========================================
+(function tptSelectProductFix() {
+    const observer = new MutationObserver(() => {
+        const okBtns = document.querySelectorAll('button[data-cy="save-topic"]');
+        okBtns.forEach(btn => {
+            if (btn.dataset.tptHooked === "1") return;
+            btn.dataset.tptHooked = "1";
+
+            btn.addEventListener("click", async () => {
+                console.log("🟡 [TPT] OK button clicked → auto-fill product input");
+
+                const modal = btn.closest(".css-oks3g7, [role='dialog']");
+                if (!modal) return;
+
+                // ambil title topic dari modal
+                let title = null;
+                for (let i = 0; i < 20; i++) {
+                    const t = modal.querySelector("input[name='title']");
+                    if (t && t.value.trim()) {
+                        title = t.value.trim();
+                        break;
+                    }
+                    await new Promise(r => setTimeout(r, 100));
+                }
+                if (!title) return console.warn("⚠️ [TPT] Tidak menemukan title topic di modal");
+
+                // ambil price
+                const priceInput = [...document.querySelectorAll(".tpt-topic-price")].find(el => {
+                    const block = el.closest(".css-1g2ghqr, .css-rxenkd");
+                    const titleEl = block?.querySelector("input[name='title']")?.value.trim() || "";
+                    const labelEl = block?.querySelector(".css-1jlm4v3")?.textContent.trim() || "";
+                    return titleEl === title || labelEl === title;
+                });
+                if (!priceInput) return;
+
+                const price = parseInt(priceInput.value || 0);
+                const urlParams = new URLSearchParams(window.location.search);
+                const course_id = urlParams.get("course_id");
+                if (!course_id) return;
+
+                // kirim AJAX ke server
+                jQuery.post(TPT_Ajax.ajax_url, {
+                    action: "tpt_save_price",
+                    title,
+                    course_id,
+                    price,
+                    nonce: TPT_Ajax.nonce,
+                }).done(async (resp) => {
+                    if (!resp.success) return console.warn("❌ Gagal simpan harga", resp);
+                    const { wc_id } = resp.data;
+                    if (!wc_id) return;
+
+                    console.log("✅ Topic price saved & WC product created:", resp.data);
+
+                    // pastikan tab Basics terbuka
+                    const basicsTabBtn = [...document.querySelectorAll("button, a")]
+                        .find(el => /Basics/i.test(el.textContent || ""));
+                    if (basicsTabBtn) {
+                        basicsTabBtn.click();
+                        console.log("📂 [TPT] Tab 'Basics' dibuka otomatis");
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+
+                    // cari input Pricing Model
+                    let productInput = null;
+                    for (let i = 0; i < 30; i++) {
+                        productInput = document.querySelector("input[name='course_product_id'][data-select='true']");
+                        if (productInput) break;
+                        await new Promise(r => setTimeout(r, 300));
+                    }
+
+                    if (!productInput) {
+                        console.warn("⚠️ [TPT] Input product belum ditemukan setelah 9 detik");
+                        return;
+                    }
+
+                    // langsung isi value
+                    // gunakan properti setter asli agar React detect
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                    nativeInputValueSetter.call(productInput, title);
+
+                    // kirim event seperti input user asli
+                    const inputEvent = new Event("input", { bubbles: true });
+                    productInput.dispatchEvent(inputEvent);
+
+                    console.log("🧩 [TPT] Input course_product_id diset (React-safe):", title);
+
+                    // efek visual
+                    productInput.style.borderColor = "#4CAF50";
+                    productInput.style.boxShadow = "0 0 6px rgba(76,175,80,0.5)";
+                    setTimeout(() => {
+                        productInput.style.borderColor = "";
+                        productInput.style.boxShadow = "";
+                    }, 1000);
+
+                });
+            });
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+})();
+

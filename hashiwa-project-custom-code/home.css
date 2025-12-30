@@ -1,0 +1,144 @@
+/* ===================================== */
+/* 🎨 STYLE WARNA UTAMA (MERAH HASHIWA) */
+/* ===================================== */
+selector {
+  color: rgba(179, 40, 46, 1) !important;
+  /* Warna teks utama */
+}
+
+/* Warna teks di dalam p, span, dan link */
+selector p,
+selector span,
+selector a {
+  color: rgba(179, 40, 46, 1) !important;
+}
+
+/* Warna icon SVG utama */
+selector svg .color {
+  fill: rgba(179, 40, 46, 1) !important;
+}
+
+/* Warna accent bagian SVG (emas) */
+selector svg path[opacity="0.4"] {
+  fill: var(--gold) !important;
+}
+
+/* ===================================== */
+/* 🌟 BACKGROUND EMAS REALISTIK */
+/* ===================================== */
+selector .tp-header-2-category-icon,
+selector .tp-header-inner-category {
+  background: var(--gold-gradient) !important;
+  border-radius: 120px;
+  /* opsional */
+  padding: 5px 10px;
+  /* opsional */
+}
+
+/* Tombol utama "Enroll Now" */
+selector .tp-header-inner-btn .tp-btn-inner,
+selector .tp-header-inner-btn .tp-el-btn2 {
+  background: var(--gold-gradient) !important;
+  color: rgba(179, 40, 46, 1) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 50px;
+  padding: 10px 24px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+/* Efek hover ringan */
+selector .tp-header-inner-btn .tp-btn-inner:hover,
+selector .tp-header-inner-btn .tp-el-btn2:hover {
+  background: linear-gradient(135deg,
+      var(--gold-dark) 0%,
+      var(--gold) 35%,
+      var(--gold-mid) 80%,
+      var(--gold-light) 100%) !important;
+  transform: translateY(-2px);
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+
+/* ========================================
+   GOLD OUTLINE BUTTON (via Elementor widget)
+   ======================================== */
+selector {
+  position: relative;
+  display: inline-block;
+  padding: 12px 32px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--btn-gold-outline-text) !important;
+  border-radius: 50px;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--btn-gold-outline-border) border-box;
+  background-clip: padding-box, border-box;
+  background-origin: border-box;
+  transition: all 0.3s ease;
+  box-shadow: none;
+  isolation: isolate;
+}
+
+/* pastikan teksnya tidak ikut kena background */
+selector .elementor-button-text {
+  background: transparent !important;
+  color: var(--btn-gold-outline-text) !important;
+}
+
+/* hover effect */
+selector:hover {
+  color: #fff !important;
+  background: var(--btn-gold-outline-hover-bg) !important;
+  box-shadow: 0 4px 10px rgba(255, 183, 0, 0.4);
+  transform: translateY(-2px);
+  border: none;
+}
+
+/* ========================================
+   GOLD OUTLINE BUTTON (via Elementor widget)
+   ======================================== */
+selector {
+  position: relative;
+  display: inline-block;
+  padding: 12px 32px;
+  font-weight: 600;
+  text-transform: capitalize;
+  border-radius: 50px;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--btn-gold-outline-border) border-box;
+  background-clip: padding-box, border-box;
+  background-origin: border-box;
+  transition: all 0.3s ease;
+  box-shadow: none;
+  isolation: isolate;
+}
+
+/* pastikan teksnya tidak ikut kena background */
+selector .elementor-button-text {
+  background: transparent !important;
+  color: var(--btn-gold-outline-text) !important;
+}
+
+/* hover effect */
+selector:hover {
+  background: var(--btn-gold-outline-hover-bg) !important;
+  box-shadow: 0 4px 10px rgba(255, 183, 0, 0.4);
+  transform: translateY(-2px);
+  border: none;
+}
+
+/* pastikan teks di dalam ikut berubah warna saat hover */
+selector:hover .elementor-button-text {
+  color: #fff !important;
+}

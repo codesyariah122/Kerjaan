@@ -1,0 +1,207 @@
+SELECT meta_value FROM wpsu_postmeta WHERE post_id = 17012 AND meta_key = '_tutor_enrolled_user_ids';
+
+
+SELECT * FROM wp_usermeta WHERE user_id = 19 AND meta_key IN ('tutor_enrolled_courses', 'tutor_enrolled_courses_cache');
+
+SELECT * FROM wpsu_tutor_enrolled WHERE user_id = 19;
+
+
+-- Hapus dari tabel tutor_enrolled
+DELETE FROM wpsu_tutor_enrolled WHERE user_id = 19;
+
+-- Hapus cache & meta
+DELETE FROM wpsu_usermeta WHERE user_id = 19 AND meta_key IN (
+'tutor_total_enroll',
+'tutor_enrolled_courses',
+'tutor_enrolled_courses_cache'
+);
+
+-- Hapus post order
+DELETE FROM wpsu_posts
+WHERE post_type = 'shop_order'
+AND ID IN (
+SELECT post_id FROM wpsu_postmeta WHERE meta_key='_customer_user' AND meta_value=19
+);
+
+-- Hapus meta order
+DELETE FROM wpsu_postmeta WHERE post_id NOT IN (SELECT ID FROM wpsu_posts);
+
+DELETE FROM wpsu_usermeta WHERE user_id = 19 AND meta_key LIKE '_tpt_%';
+
+DELETE FROM wpsu_tutor_enrolled WHERE user_id = 19;
+
+ubah status complete progress per topic / lesson :
+SELECT ID, post_title, post_name FROM wpsu_posts WHERE post_type = 'lesson' AND post_name = 'testing-one-lesson-first';
+
+Hapus semua lesson / topic completed usermeta:
+DELETE FROM wpsu_usermeta 
+WHERE user_id = 20 
+  AND meta_key LIKE '_tutor_completed_lesson_id_%';
+
+DELETE FROM wpsu_usermeta 
+WHERE user_id = 20 
+  AND meta_key = '_tpt_completed_topics';
+
+DELETE FROM wpsu_usermeta 
+WHERE user_id = 20 
+  AND meta_key = 'tutor_course_progress';
+
+Update kursus agar progress 0:
+UPDATE wpsu_tutor_enrolled
+SET is_completed = 0,
+    completion_percent = 0
+WHERE user_id = 20
+  AND course_id = 17012;
+
+  -- Hapus semua progress lama
+DELETE FROM wpsu_usermeta
+WHERE user_id = 20
+  AND meta_key IN (
+    '_tpt_completed_topics',
+    '_tutor_completed_lesson_id_17015',
+    'tutor_course_progress',
+    'tutor_enrolled_courses',
+    'tutor_enrolled_courses_cache',
+    'tutor_total_enroll'
+  );
+
+-- Pastikan user ter-enroll ke course ID = 16991 (contoh: Belajar Python)
+INSERT INTO wpsu_tutor_enrolled (user_id, course_id, enrolled_date)
+SELECT 20, 16991, NOW()
+WHERE NOT EXISTS (
+  SELECT 1 FROM wpsu_tutor_enrolled WHERE user_id = 20 AND course_id = 16991
+);
+
+-- Tambahkan _tpt_completed_topics untuk unlock topik pertama (17014)
+INSERT INTO wpsu_usermeta (user_id, meta_key, meta_value)
+VALUES (20, '_tpt_completed_topics', 'a:1:{i:0;i:17014;}');
+
+
+
+cek user meta :
+SELECT * 
+FROM wpsu_usermeta 
+WHERE user_id = 20 
+  AND meta_key LIKE '%tutor%';
+
+
+clear cache course tutor endpoint : 
+https://hashiwa.tokoweb.live/wp-json/tpt/v1/refresh-enroll-cache?user_id=20
+
+
+
+jaga jaga :
+🔹 1️⃣ Perbaiki relasi produk WooCommerce → course aktif
+UPDATE wpsu_postmeta 
+SET meta_value = '17012' 
+WHERE meta_key = '_tutor_course_id' 
+AND meta_value = '16991';
+
+🔹 2️⃣ Ubah data enroll user agar mengarah ke course 17012
+UPDATE wpsu_tutor_enrolled 
+SET course_id = 17012 
+WHERE user_id = 20 
+AND course_id = 16991;
+
+🔹 3️⃣ Bersihkan enroll cache & progress lama
+DELETE FROM wpsu_usermeta 
+WHERE user_id = 20 
+AND meta_key IN (
+  'tutor_enrolled_courses',
+  'tutor_enrolled_courses_cache',
+  'tutor_total_enroll',
+  'tutor_course_progress',
+  '_tpt_completed_topics'
+);
+
+🔹 4️⃣ Tambahkan meta completed topic pertama (biar auto unlock)
+INSERT INTO wpsu_usermeta (user_id, meta_key, meta_value)
+VALUES (20, '_tpt_completed_topics', 'a:1:{i:0;i:17014;}');
+
+
+🧹 Solusi:
+
+Langsung hapus enroll duplikat dari tabel utama wpsu_tutor_enrolled.
+
+Jalankan SQL berikut:
+
+DELETE FROM wpsu_tutor_enrolled
+WHERE user_id = 20
+AND course_id = 17012
+LIMIT 1;
+
+
+Kemudian cek ulang:
+
+SELECT * FROM wpsu_tutor_enrolled WHERE user_id = 20;
+
+
+Pastikan cuma satu baris dengan course_id = 17012.
+
+
+DELETE FROM wpsu_usermeta 
+WHERE user_id = 20 
+AND (
+  meta_key LIKE '_tutor_completed_lesson_id_%' OR
+  meta_key LIKE 'tutor_lesson_completed_ids_%' OR
+  meta_key = 'tutor_course_progress'
+);
+
+
+#### Query penting seputar status complete lesson di ecourse hashiwa
+lihat status complete untuk lesson di topic tertentu :
+cek table :
+SHOW TABLES LIKE '%tutor%activities%';
+
+SELECT umeta_id, meta_key, meta_value FROM wpsu_usermeta WHERE user_id = 20 AND meta_key LIKE '%tutor%' ORDER BY umeta_id DESC;
+
+Delete status complete lesson di topic :
+DELETE FROM wpsu_usermeta
+WHERE user_id = 20
+  AND meta_key = '_tutor_completed_lesson_id_17065';
+
+
+reset semua lesson complete di semua topic :
+DELETE FROM wpsu_usermeta
+WHERE user_id = 20
+  AND meta_key = '_tutor_completed_lesson_id_17065';
+
+
+solusi lain jika query diatas tidak merubah keadaan 
+✅ Langkah 1 — Hapus Cache Tutor LMS untuk User 20
+
+Jalankan SQL ini:
+
+DELETE FROM wpsu_usermeta
+WHERE user_id = 20
+  AND meta_key LIKE 'tutor_%progress%';
+
+
+
+select course order / enrolled course by user :
+SELECT post_id, meta_value 
+FROM wpsu_postmeta 
+WHERE meta_key = '_tpt_price' 
+AND post_id IN (
+    SELECT ID FROM wpsu_posts WHERE post_parent = 17012 AND post_type IN ('topics','topic')
+);
+
+SELECT * FROM wpsu_tutor_enrolled WHERE user_id = 20;
+
+-- Hapus order Tutor LMS yang terkait dengan user 20
+DELETE FROM wpsu_tutor_orders WHERE user_id = 20;
+
+-- Hapus item order Tutor LMS yang terkait dengan order di atas
+DELETE FROM wpsu_tutor_order_items 
+WHERE order_id NOT IN (SELECT id FROM wpsu_tutor_orders);
+
+-- Hapus metadata order Tutor LMS
+DELETE FROM wpsu_tutor_ordermeta 
+WHERE order_id NOT IN (SELECT id FROM wpsu_tutor_orders);
+
+⚙️ Setelah itu
+
+Jalankan juga flush cache ini dari SQL:
+
+DELETE FROM wpsu_options WHERE option_name LIKE '%tutor_dashboard_facts%';
+DELETE FROM wpsu_options WHERE option_name LIKE '%tutor_student_stats%';

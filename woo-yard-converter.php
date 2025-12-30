@@ -226,33 +226,36 @@ function woo_add_custom_cart_button_style()
     wp_add_inline_style('woo-custom-buttons-style', $custom_css);
 }
 
-function custom_enqueue_fontawesome()
+
+function custom_enqueue_fontawesome_local()
 {
     wp_enqueue_style(
-        'font-awesome-cdn',
-        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css',
+        'font-awesome-local',
+        plugin_dir_url(__FILE__) . 'woo-yard-converter-assets/fontawesome.min.css',
         array(),
         '6.7.2'
     );
 }
-add_action('wp_enqueue_scripts', 'custom_enqueue_fontawesome');
+add_action('wp_enqueue_scripts', 'custom_enqueue_fontawesome_local', 1);
 
-function custom_enqueue_fontawesome_scripts()
+function custom_enqueue_fontawesome_scripts_local()
 {
     wp_enqueue_script(
-        'font-awesome-js',
-        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js',
+        'font-awesome-js-local',
+        plugin_dir_url(__FILE__) . 'woo-yard-converter-assets/fontawesome.min.js',
         array(),
         '6.7.2',
         true
     );
 }
-add_action('wp_enqueue_scripts', 'custom_enqueue_fontawesome_scripts');
+add_action('wp_enqueue_scripts', 'custom_enqueue_fontawesome_scripts_local', 1);
 
 add_action('woocommerce_after_add_to_cart_button', 'woo_add_beli_langsung_button', 5);
 function woo_add_beli_langsung_button()
 {
     global $product;
+    if (!$product) return;
+
     $product_id = $product->get_id();
     $enable_converter = get_post_meta($product_id, '_enable_unit_converter', true);
     if ($enable_converter === '') {
@@ -262,12 +265,26 @@ function woo_add_beli_langsung_button()
     $product_title = $product->get_title();
     $product_url   = get_permalink($product_id);
     $site_name     = get_bloginfo('name');
-    $price_per_yard_raw = get_post_meta($product_id, '_price_per_yard', true);
-    $price_per_yard = floatval($price_per_yard_raw);
-    $harga_format = 'Rp' . number_format($price_per_yard, 0, ',', '.');
-    $total_bayar_format = 'Rp' . number_format($price_per_yard, 0, ',', '.');
 
-    // Ambil nomor WA dari custom post
+    // =========================================
+    // ✅ Ambil harga aktif (prioritas harga diskon)
+    // =========================================
+    $regular_price = floatval($product->get_regular_price());
+    $sale_price    = floatval($product->get_sale_price());
+    $active_price  = $sale_price > 0 ? $sale_price : $regular_price;
+
+    // Fallback ke _price_per_yard
+    if ($active_price <= 0) {
+        $price_per_yard_raw = get_post_meta($product_id, '_price_per_yard', true);
+        $active_price = floatval($price_per_yard_raw);
+    }
+
+    $harga_format = 'Rp' . number_format($active_price, 0, ',', '.');
+    $total_bayar_format = $harga_format;
+
+    // =========================================
+    // 🔎 Ambil nomor WA dari custom post
+    // =========================================
     $args = array(
         'post_type'      => 'whatsapp_admin',
         'posts_per_page' => 1,
@@ -291,25 +308,27 @@ function woo_add_beli_langsung_button()
         wp_reset_postdata();
     }
 
-    // HTML tombol WA
+    // =========================================
+    // 💬 Tombol WhatsApp
+    // =========================================
     echo '<div class="woo-btn-wrapper">';
     echo '<a href="#" data-wa="' . esc_attr($nomor_wa) . '" class="button beli-langsung-wa" style="background-color: #25D366; color: white; padding: 20px 25px; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-            <i class="fab fa-whatsapp" style="font-size: 18px; color: white;"></i>
+            <i class="fa-brands fa-whatsapp" style="font-size: 18px; color: white;"></i>
             Beli Langsung
         </a>';
     echo '</div>';
 
-    // Tambahkan JS ke footer
+    // =========================================
+    // 🧠 JavaScript handler tombol WA
+    // =========================================
     add_action('wp_footer', function () use ($site_name) {
 ?>
         <script>
-            // Fungsi ambil satuan yang dipilih
             function getSelectedUnit() {
                 const selected = document.querySelector('input[name="input_unit"]:checked');
                 return selected ? selected.value : 'yard';
             }
 
-            // Fungsi ambil jumlah input (misalnya 3 yard)
             function getSelectedQty() {
                 const inputSatuan = document.querySelector('input[name="input_satuan"]');
                 return inputSatuan ? parseFloat(inputSatuan.value) || 1 : 1;
@@ -335,12 +354,6 @@ function woo_add_beli_langsung_button()
                         const qty = localStorage.getItem('yard_value') ? localStorage.getItem('yard_value') : 1;
                         localStorage.setItem('yard_value', qty);
                         localStorage.setItem('unit_value', unit);
-
-                        console.log("Add To Cart di click")
-                        console.log(unitInput);
-                        console.log(unit);
-                        console.log(qty);
-
                     }
                 });
 
@@ -350,7 +363,6 @@ function woo_add_beli_langsung_button()
 
                         const unitSelected = getSelectedUnit();
                         const qty = getSelectedQty();
-
                         const title = document.querySelector('h1.product_title')?.textContent.trim() || 'Produk';
                         const url = window.location.href;
 
@@ -368,7 +380,7 @@ function woo_add_beli_langsung_button()
                             warna = selectedSwatch.getAttribute('data-name').trim();
                         }
 
-                        // Fallback: dari attribute variation
+                        // Fallback warna dari variation attribute
                         if (warna === '-' && variation) {
                             for (const [key, value] of Object.entries(variation.attributes)) {
                                 if (key.includes('attribute_pa_warna') || key.includes('attribute_pa_d697')) {
@@ -378,20 +390,35 @@ function woo_add_beli_langsung_button()
                             }
                         }
 
+                        // =========================================
+                        // ✅ Ambil harga diskon jika ada
+                        // =========================================
                         if (variation) {
-                            hargaRaw = variation.display_price || 0;
+                            if (variation.display_price && variation.display_regular_price && variation.display_price < variation.display_regular_price) {
+                                hargaRaw = variation.display_price; // harga diskon aktif
+                            } else {
+                                hargaRaw = variation.display_regular_price || variation.display_price || 0;
+                            }
+
                             if (variation.image?.src) {
                                 gambar = variation.image.src;
                             }
                         } else {
-                            // fallback ke price default product jika non-variation
-                            const priceEl = document.querySelector('.woocommerce-Price-amount bdi');
-                            hargaRaw = priceEl ? parseFloat(priceEl.textContent.replace(/[^\d]/g, '')) || 0 : 0;
+                            // produk simple
+                            const salePriceEl = document.querySelector('.price ins .woocommerce-Price-amount bdi');
+                            const regularPriceEl = document.querySelector('.price del .woocommerce-Price-amount bdi') || document.querySelector('.price .woocommerce-Price-amount bdi');
+
+                            if (salePriceEl) {
+                                hargaRaw = parseFloat(salePriceEl.textContent.replace(/[^\d]/g, '')) || 0;
+                            } else if (regularPriceEl) {
+                                hargaRaw = parseFloat(regularPriceEl.textContent.replace(/[^\d]/g, '')) || 0;
+                            } else {
+                                hargaRaw = 0;
+                            }
                         }
 
-                        // Hitung total sesuai qty aktual
+                        // Hitung total
                         const total = hargaRaw * qty;
-
                         const hargaFormat = new Intl.NumberFormat('id-ID').format(hargaRaw);
                         const totalFormat = new Intl.NumberFormat('id-ID').format(total);
 
@@ -541,27 +568,27 @@ function woo_register_yard_converter_styles()
     wp_add_inline_style('woo-yard-converter', $css);
 }
 
-function load_sweetalert_in_head()
+
+
+function woo_enqueue_sweetalert2_local()
 {
     if (is_product()) {
-        echo '
-        <!-- SweetAlert2 CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        ';
+        wp_enqueue_script(
+            'sweetalert2-local',
+            plugin_dir_url(__FILE__) . 'woo-yard-converter-assets/sweetalert2.min.js',
+            array(),
+            '11.0.0',
+            true
+        );
+        wp_enqueue_style(
+            'sweetalert2-local-css',
+            plugin_dir_url(__FILE__) . 'woo-yard-converter-assets/sweetalert2.min.css',
+            array(),
+            '11.0.0'
+        );
     }
 }
-
-add_action('wp_head', 'load_sweetalert_in_head');
-
-function load_sweetalert_css_in_head()
-{
-    if (is_product()) {
-        echo '
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
-        ';
-    }
-}
-add_action('wp_head', 'load_sweetalert_css_in_head');
+add_action('wp_enqueue_scripts', 'woo_enqueue_sweetalert2_local', 1);
 
 add_action('woocommerce_before_add_to_cart_quantity', 'woo_converter_input_fields_conditional', 5);
 function woo_converter_input_fields_conditional()
@@ -1010,7 +1037,9 @@ add_filter('woocommerce_get_item_data', function ($item_data, $cart_item) {
     if (!empty($cart_item['input_satuan'])) {
         $unit_value = floatval($cart_item['input_satuan']);
         $unit_label = !empty($cart_item['input_unit']) ? ucfirst($cart_item['input_unit']) : 'Yard';
-        $base_price = floatval($cart_item['data']->get_regular_price());
+        $sale_price    = floatval($cart_item['data']->get_sale_price());
+        $regular_price = floatval($cart_item['data']->get_regular_price());
+        $base_price    = $sale_price > 0 ? $sale_price : $regular_price;
 
         // Output clean tanpa inline style
         $custom_value = sprintf(
@@ -1112,7 +1141,7 @@ add_filter('woocommerce_cart_item_subtotal', function ($subtotal, $cart_item, $c
 }, 20, 3);
 
 // ===============================
-// 5️⃣ Kalkulasi ulang harga di cart berdasarkan input_satuan
+// 5️⃣ Kalkulasi ulang harga di cart berdasarkan input_satuan (dengan harga diskon)
 // ===============================
 add_action('woocommerce_before_calculate_totals', function ($cart) {
     if (is_admin() && !defined('DOING_AJAX')) return;
@@ -1120,22 +1149,22 @@ add_action('woocommerce_before_calculate_totals', function ($cart) {
 
     foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
         if (!empty($cart_item['input_satuan'])) {
-            $harga_awal = floatval($cart_item['data']->get_regular_price());
-            $jumlah     = floatval($cart_item['input_satuan']);
-            $harga_baru = $harga_awal * $jumlah;
+            $product = $cart_item['data'];
+            $jumlah  = floatval($cart_item['input_satuan']);
 
-            // Set harga produk baru
-            $cart_item['data']->set_price($harga_baru);
+            // Ambil harga aktif (sale > regular)
+            $sale_price    = floatval($product->get_sale_price());
+            $regular_price = floatval($product->get_regular_price());
+            $active_price  = $sale_price > 0 ? $sale_price : $regular_price;
 
-            // ✅ Update juga line_total agar checkout membaca nilai baru
-            $cart->cart_contents[$cart_item_key]['line_total']    = $harga_baru;
-            $cart->cart_contents[$cart_item_key]['line_subtotal'] = $harga_baru;
-
-            // (opsional) tambahkan log untuk verifikasi
-            error_log("UPDATE checkout item {$cart_item_key} => " . $harga_baru);
+            // 💡 Trik penting:
+            // set_price() itu harga per item (per qty)
+            // Jadi kalau kamu mau qty-nya dianggap 1 tapi nilainya dikalikan jumlah custom,
+            // ubah harga per item jadi hasil kali.
+            $product->set_price($active_price * $jumlah);
         }
     }
-});
+}, 99);
 
 // ===============================
 // ✅ Checkout: tampilkan hanya jumlah (tanpa × harga) dan biarkan subtotal WooCommerce menampilkan total yang benar
@@ -1144,7 +1173,9 @@ add_filter('woocommerce_checkout_cart_item_quantity', function ($quantity_html, 
     if (!empty($cart_item['input_satuan'])) {
         $unit_value = floatval($cart_item['input_satuan']);
         $unit_label = !empty($cart_item['input_unit']) ? ucfirst($cart_item['input_unit']) : '';
-        $base_price = floatval($cart_item['data']->get_regular_price());
+        $sale_price    = floatval($cart_item['data']->get_sale_price());
+        $regular_price = floatval($cart_item['data']->get_regular_price());
+        $base_price    = $sale_price > 0 ? $sale_price : $regular_price;
 
         // Hanya tampilkan (tidak merubah perhitungan)
         $quantity_html = sprintf(
@@ -1375,14 +1406,54 @@ function custom_variable_price_per_yard_display($price_html, $product)
         return '<p class="price">Harga tidak tersedia</p>'; // Tampilkan pesan jika tidak ada harga
     }
 
-    $min = min($prices);
-    $max = max($prices);
+    // Untuk menangani kemungkinan sale pada variasi, hitung juga harga sale per yard
+    $regular_prices = $prices; // harga per yard dari meta (diasumsikan sebagai regular/base)
+    $sale_prices = [];
 
-    if ($min == $max) {
-        return '<p class="price">Harga per yard: ' . wc_price($min) . '</p>';
-    } else {
-        return '<p class="price">Harga per yard: ' . wc_price($min) . ' – ' . wc_price($max) . '</p>';
+    foreach ($available_variations as $variation) {
+        $vid = $variation['variation_id'];
+        $variation_product = wc_get_product($vid);
+        $custom_price = floatval(get_post_meta($vid, '_price_per_yard', true));
+
+        $regular = floatval($variation_product->get_regular_price());
+        $current = floatval($variation_product->get_price());
+
+        // Jika variasi sedang sale dan regular > 0, terapkan rasio diskon ke harga per yard
+        if ($variation_product->is_on_sale() && $regular > 0) {
+            $ratio = $current / $regular;
+            $sale_prices[] = $custom_price * $ratio;
+        }
     }
+
+    $min_reg = min($regular_prices);
+    $max_reg = max($regular_prices);
+
+    // Jika ada sale_prices, tampilkan harga coret (regular) dan harga sale
+    if (!empty($sale_prices)) {
+        $min_sale = min($sale_prices);
+        $max_sale = max($sale_prices);
+
+        // Jika semua sale sama dengan regular (kasus edge), tampilkan biasa
+        if ($min_sale == $min_reg && $max_sale == $max_reg) {
+            if ($min_reg == $max_reg) {
+                return '<p class="price">Harga per yard: ' . wc_price($min_reg) . '</p>';
+            }
+            return '<p class="price">Harga per yard: ' . wc_price($min_reg) . ' – ' . wc_price($max_reg) . '</p>';
+        }
+
+        // Tampilkan coret untuk regular, dan ins untuk sale
+        if ($min_sale == $max_sale) {
+            return '<p class="price"><del>' . wc_price($min_reg) . '</del> <ins>' . wc_price($min_sale) . '</ins> <small>/ yard</small></p>';
+        }
+
+        return '<p class="price"><del>' . wc_price($min_reg) . ' – ' . wc_price($max_reg) . '</del> <ins>' . wc_price($min_sale) . ' – ' . wc_price($max_sale) . '</ins> <small>/ yard</small></p>';
+    }
+
+    // Tidak ada sale, tampilkan range/ single biasa
+    if ($min_reg == $max_reg) {
+        return '<p class="price">Harga per yard: ' . wc_price($min_reg) . '</p>';
+    }
+    return '<p class="price">Harga per yard: ' . wc_price($min_reg) . ' – ' . wc_price($max_reg) . '</p>';
 }
 
 // ====== TAMBAH FIELD HARGA PER YARD DI VARIASI PRODUK ======
@@ -1679,7 +1750,7 @@ function custom_insert_call_to_us_button_php()
            data-link="' . esc_url($product_link) . '"
            data-site="' . esc_attr($site_name) . '"
            target="_blank">
-           <i class="fab fa-whatsapp"></i>
+           <i class="fa-brands fa-whatsapp"></i>
            &nbsp;Call To Us
         </a>
 

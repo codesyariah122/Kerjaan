@@ -1,0 +1,71 @@
+{
+  "key": "group_hashiwa_program_fields",
+  "title": "Program Fields",
+  "fields": [
+    {
+      "key": "field_durasi",
+      "label": "Durasi Program",
+      "name": "durasi_program",
+      "type": "text",
+      "instructions": "Contoh: 8 - 12 Bulan"
+    },
+    {
+      "key": "field_level",
+      "label": "Tingkat Level",
+      "name": "tingkat_level",
+      "type": "text",
+      "instructions": "Contoh: Basic → Intermediate → N3"
+    },
+    {
+      "key": "field_fasilitas",
+      "label": "Fasilitas Program",
+      "name": "fasilitas_program",
+      "type": "textarea",
+      "instructions": "Isi 1 fasilitas per baris.",
+      "rows": 5
+    },
+    {
+      "key": "field_rating",
+      "label": "Rating Program",
+      "name": "rating_program",
+      "type": "number",
+      "instructions": "0 - 5",
+      "min": 0,
+      "max": 5,
+      "step": "0.1"
+    },
+    {
+      "key": "field_button_text",
+      "label": "CTA Button Text",
+      "name": "button_text",
+      "type": "text",
+      "instructions": "Default: Lihat Program"
+    },
+    {
+      "key": "field_button_url",
+      "label": "CTA Button URL",
+      "name": "button_url",
+      "type": "url",
+      "instructions": "URL halaman detail"
+    },
+    {
+      "key": "field_highlight",
+      "label": "Highlight Program",
+      "name": "highlight_program",
+      "type": "true_false",
+      "default_value": 0
+    }
+  ],
+  "location": [
+    [
+      {
+        "param": "post_type",
+        "operator": "==",
+        "value": "program"
+      }
+    ]
+  ],
+  "position": "normal",
+  "style": "seamless",
+  "active": true
+}

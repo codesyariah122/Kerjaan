@@ -1,0 +1,475 @@
+:root {
+  --gold-light: #f7e183;
+  --gold-mid: #e8c547;
+  --gold: #d4af37;
+  --gold-dark: #b8860b;
+  --default-red: #ab0c2f;
+
+  /* tombol gradasi solid */
+  --btn-gold-gradient: linear-gradient(90deg, #FFD700 0%, #FFB700 50%, #FFD700 100%);
+  --btn-gold-hover: linear-gradient(90deg, #FFB700 0%, #FFD700 50%, #FFB700 100%);
+  --btn-text-color: #ffffff;
+  --btn-text-outline: #d4af37;
+
+  /* gradasi emas realistik untuk border */
+  --gold-gradient: linear-gradient(135deg,
+      var(--gold-light) 0%,
+      var(--gold-mid) 25%,
+      var(--gold) 60%,
+      var(--gold-dark) 100%);
+
+  /* tambahkan var khusus untuk outline border */
+  --btn-gold-outline-border: var(--gold-gradient);
+  --btn-gold-outline-hover-bg: var(--gold-gradient);
+  --btn-gold-outline-text: var(--gold);
+}
+
+/* Prevent horizontal scroll on mobile */
+html,
+body {
+  overflow-x: hidden !important;
+}
+
+/* Elementor sections preventing overflow */
+.elementor-section,
+.elementor-container,
+.elementor-column,
+.elementor-widget {
+  overflow-x: hidden !important;
+}
+
+/* Fix images causing overflow */
+img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Fix HTML widget custom code */
+.elementor-widget-html {
+  overflow: hidden !important;
+}
+
+/* Prevent columns from stretching outside viewport */
+.elementor-column {
+  min-width: 0 !important;
+}
+
+/* ===============================
+   BUTTON GOLD OUTLINE STYLE (FINAL FIX v2)
+   =============================== */
+.btn-gold-outline,
+.elementor-button.btn-gold-outline,
+.elementor-button.btn-gold-outline span {
+  position: relative;
+  display: inline-block;
+  padding: 12px 32px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--btn-gold-outline-text) !important;
+  border-radius: 50px;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(135deg, #fff 0%, #fff 100%) padding-box,
+    var(--btn-gold-outline-border) border-box;
+  background-clip: padding-box, border-box;
+  background-origin: border-box;
+  transition: all 0.3s ease;
+  box-shadow: none;
+}
+
+.btn-gold-outline:hover,
+.elementor-button.btn-gold-outline:hover {
+  color: #fff !important;
+  background: var(--btn-gold-outline-hover-bg) !important;
+  box-shadow: 0 4px 10px rgba(255, 183, 0, 0.4);
+  transform: translateY(-2px);
+  border: none;
+}
+
+/* ===============================
+   Shape divider bottom hero section
+   =============================== */
+.custom-shape-divider {
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 -150px 130px -120px #fff;
+}
+
+.custom-shape-divider::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  /* posisi default desktop */
+  left: 0;
+  width: 100%;
+  height: 280px;
+  background: url('https://hashiwa.tokoweb.live/wp-content/uploads/2025/11/Vector-124.png') no-repeat center bottom;
+  background-size: cover;
+  z-index: 5 !important;
+  pointer-events: none;
+}
+
+/* ========================================
+   BUTTON STYLING - HASHIWA FIX VERSION (v3)
+   ======================================== */
+
+/* 🟡 FULL GOLD BUTTON (solid gold) */
+.elementor-button.full-gold,
+.tp-course-btn a,
+a.button.full-gold,
+.wp-block-button__link.full-gold,
+.tp-el-theme-btn,
+.tp-el-btn {
+  background: var(--btn-gold-gradient) !important;
+  color: var(--btn-text-color) !important;
+  border: none !important;
+  box-shadow: 0 4px 10px rgba(255, 183, 0, 0.4);
+  transition: all 0.3s ease;
+  text-decoration: none !important;
+}
+
+/* Hover effect full gold */
+.elementor-button.full-gold:hover,
+.tp-course-btn a:hover,
+a.button.full-gold:hover,
+.wp-block-button__link.full-gold:hover,
+.tp-el-theme-btn:hover,
+.tp-el-btn:hover {
+  background: var(--btn-gold-hover) !important;
+  color: var(--btn-text-color) !important;
+  transform: translateY(-2px);
+}
+
+/* pastikan teks di dalam tombol tetap putih */
+.tp-el-theme-btn .theme-btn-text,
+.tp-el-btn span,
+.tp-course-btn a span,
+.elementor-button.full-gold .elementor-button-text {
+  color: var(--btn-text-color) !important;
+}
+
+/* ⚪ OUTLINE GOLD BUTTON (seperti Login, Join Now, dll) */
+.elementor-button.outline-gold,
+a.button.outline-gold,
+.wp-block-button__link.outline-gold,
+.tp-btn-border {
+  background: transparent !important;
+  color: var(--gold) !important;
+  border: 2px solid var(--gold) !important;
+  box-shadow: none !important;
+  transition: all 0.3s ease;
+}
+
+/* Hover effect outline gold */
+.elementor-button.outline-gold:hover,
+a.button.outline-gold:hover,
+.wp-block-button__link.outline-gold:hover,
+.tp-btn-border:hover {
+  background: var(--btn-gold-gradient) !important;
+  color: var(--btn-text-color) !important;
+  transform: translateY(-2px);
+}
+
+/* pastikan svg/icon ikut berubah warna */
+.tp-btn-border svg path,
+.tp-btn-border:hover svg path {
+  stroke: currentColor !important;
+  fill: currentColor !important;
+  transition: all 0.3s ease;
+}
+
+/* ========================================
+   SOCIAL ICON GOLD EFFECT (Team Section)
+   ======================================== */
+
+/* Style dasar icon sosial */
+.tp-team-2-social-icon a.tp-el-team-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  background: transparent;
+  transition: all 0.3s ease;
+  margin: 0 4px;
+  text-decoration: none !important;
+}
+
+/* Hover effect — full gold background */
+.tp-team-2-social-icon a.tp-el-team-social:hover {
+  background: var(--btn-gold-gradient);
+  color: var(--btn-text-color);
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(255, 183, 0, 0.4);
+}
+
+/* ========================================
+   FIXED GOLD SOCIAL ICON STYLE (Hashiwa)
+   ======================================== */
+
+/* Container social icon */
+.tp-team-2-social-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Style dasar tiap icon (hilangkan warna bawaan tema) */
+.tp-team-2-social-icon a.tp-el-team-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--btn-gold-gradient) !important;
+  color: var(--btn-text-color) !important;
+  border: none !important;
+  transition: all 0.3s ease;
+  text-decoration: none !important;
+}
+
+/* Hover effect (emas lebih terang & sedikit naik) */
+.tp-team-2-social-icon a.tp-el-team-social:hover {
+  background: var(--btn-gold-hover) !important;
+  color: var(--btn-text-color) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(255, 183, 0, 0.4);
+}
+
+/* pastikan ikon font-awesome tetap putih */
+.tp-team-2-social-icon a.tp-el-team-social i {
+  color: inherit !important;
+  transition: color 0.3s ease;
+}
+
+/* tombol "+" trigger di atas juga ikut gold */
+.tp-team-2-social-wrap {
+  background: var(--btn-gold-gradient) !important;
+  color: var(--btn-text-color) !important;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tp-team-2-social-wrap:hover {
+  background: var(--btn-gold-hover) !important;
+  transform: rotate(90deg);
+}
+
+.tp-section-3-title span {
+  color: var(--default-red) !important
+}
+
+/* ========================================
+   HASHIWA CONTACT FORM DESIGN
+   ======================================== */
+
+.contact-form-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.contact-form-wrapper .form-group {
+  margin-bottom: 20px;
+}
+
+.contact-form-wrapper label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.contact-form-wrapper .form-control {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #eee;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #333;
+  transition: all 0.3s ease;
+  background-color: #fafafa;
+}
+
+.contact-form-wrapper .form-control:focus {
+  border-color: var(--gold);
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+  outline: none;
+}
+
+/* tombol submit - full gold */
+.contact-form-wrapper .btn-gold {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 14px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  text-transform: capitalize;
+  color: var(--btn-text-color);
+  background: var(--btn-gold-gradient);
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(255, 183, 0, 0.4);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.contact-form-wrapper .btn-gold:hover {
+  background: var(--btn-gold-hover);
+  transform: translateY(-2px);
+}
+
+/* ========================================
+   HASHIWA NEWSLETTER FORM STYLE (LEFT BUTTON)
+   ======================================== */
+
+.newsletter-wrapper {
+  width: 100%;
+  background: transparent;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.newsletter-form {
+  display: flex;
+  flex-direction: column;
+  /* ✅ ubah jadi kolom */
+  align-items: flex-start;
+  /* ✅ rata kiri */
+  gap: 10px;
+}
+
+/* input email */
+.newsletter-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 16px;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  font-size: 15px;
+  background-color: #fafafa;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+.newsletter-input:focus {
+  border-color: var(--gold);
+  background: #fff;
+  outline: none;
+}
+
+/* tombol subscribe */
+.newsletter-btn {
+  background: var(--btn-gold-gradient);
+  color: var(--btn-text-color);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(255, 183, 0, 0.4);
+  margin-top: 4px;
+  /* ✅ jarak kecil dari input */
+}
+
+.newsletter-btn:hover {
+  background: var(--btn-gold-hover);
+  transform: translateY(-2px);
+}
+
+/* Responsif: tetap rapi di layar kecil */
+@media (max-width: 768px) {
+  .newsletter-input {
+    width: 100%;
+  }
+
+  .newsletter-btn {
+    width: auto;
+    /* tetap kecil di bawah input */
+  }
+}
+
+
+/* ===========================================
+   OFFCANVAS MOBILE MENU FIX — HASHIWA
+   =========================================== */
+
+/* 1. FIX BUTTON LOGIN/DASHBOARD */
+.tp-offcanvas-area .tp-el-theme-btn {
+  background: #fff !important;
+  color: #000 !important;
+  border: 1px solid #ddd !important;
+  box-shadow: none !important;
+}
+
+.tp-offcanvas-area .tp-el-theme-btn:hover {
+  background: #f5f5f5 !important;
+  color: #000 !important;
+  box-shadow: none !important;
+}
+
+/* 2. FIX MENU LINK WARNA */
+.tp-offcanvas-area .tp-nav-menu .nav-links {
+  color: #000 !important;
+  font-weight: 500 !important;
+}
+
+.tp-offcanvas-area .tp-nav-menu .nav-links:hover,
+.tp-offcanvas-area .tp-nav-menu .current-menu-item>.nav-links,
+.tp-offcanvas-area .tp-nav-menu .active>.nav-links {
+  color: #000 !important;
+}
+
+/* 3. FIX PARAGRAPH ALAMAT DAN TEXT INFORMASI */
+.tp-offcanvas-area p {
+  color: #000 !important;
+}
+
+/* Responsif tablet */
+@media (max-width: 1024px) {
+  .custom-shape-divider::after {
+    bottom: -15px;
+    height: 180px;
+    background-size: contain;
+    /* supaya tidak terpotong */
+  }
+}
+
+/* Responsif mobile */
+@media (max-width: 768px) {
+  .custom-shape-divider::after {
+    bottom: -10px;
+    height: 120px;
+    background-size: contain;
+  }
+}
+
+/* Responsif extra kecil (hp kecil) */
+@media (max-width: 480px) {
+  .custom-shape-divider::after {
+    z-index: 5;
+    bottom: 15px;
+    height: 150px;
+    background-size: contain;
+  }
+}
